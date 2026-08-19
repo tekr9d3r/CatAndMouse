@@ -1,0 +1,21 @@
+<iq:manifest version="3" xmlns:iq="http://www.garmin.com/xml/connectiq">
+    <iq:application id="EA122179-A57E-4D9C-B5AE-48F674F199AA" type="watch-app" name="@Strings.AppName" entry="YouAreItApp" launcherIcon="@Drawables.LauncherIcon" minApiLevel="3.4.0">
+
+        <iq:products>
+            <iq:product id="fenix7"/>
+            <iq:product id="fr255"/>
+        </iq:products>
+
+        <iq:permissions>
+            <iq:uses-permission id="Fit"/>
+        </iq:permissions>
+
+        <iq:languages>
+            <iq:language>eng</iq:language>
+        </iq:languages>
+
+        <iq:barrels>
+        </iq:barrels>
+
+    </iq:application>
+</iq:manifest>
