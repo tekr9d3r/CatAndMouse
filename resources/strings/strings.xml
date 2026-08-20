@@ -1,5 +1,9 @@
 <strings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://developer.garmin.com/downloads/connect-iq/resources.xsd">
-    <string id="AppName">You Are It</string>
+    <string id="AppName">Cat and Mouse</string>
+
+    <string id="SetupTitle">CAT &amp; MOUSE</string>
+    <string id="SetupPrompt">Press SELECT</string>
+    <string id="SetupPromptLine2">to begin</string>
 
     <string id="MenuLengthTitle">Game Length</string>
     <string id="Length10">10 min</string>
@@ -12,13 +16,11 @@
     <string id="IntensityHard">Hard</string>
 
     <string id="StateWarmup">WARM UP</string>
-    <string id="StateChased">RUN!</string>
-    <string id="StateChasing">CHASE!</string>
+    <string id="StateChased">MOUSE!</string>
+    <string id="StateChasing">CAT!</string>
     <string id="StatePaused">PAUSED</string>
     <string id="StateSummary">GAME OVER</string>
 
-    <string id="SummaryCaughtByChaser">You got caught!</string>
-    <string id="SummaryCaughtTarget">You caught them!</string>
-
-    <string id="PromptSelectLength">Select game length</string>
+    <string id="SummaryCaughtByChaser">The Cat got you!</string>
+    <string id="SummaryCaughtTarget">You caught the Mouse!</string>
 </strings>

@@ -4,6 +4,7 @@
         <iq:products>
             <iq:product id="fenix7"/>
             <iq:product id="fr255"/>
+            <iq:product id="instinct3amoled50mm"/>
         </iq:products>
 
         <iq:permissions>

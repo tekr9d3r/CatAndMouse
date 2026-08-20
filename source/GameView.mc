@@ -29,7 +29,11 @@ class GameView extends WatchUi.View {
         var state = controller.state;
 
         if (state == GameConstants.STATE_SETUP) {
-            return ["YOU ARE IT", "Press SELECT", "to begin"];
+            return [
+                WatchUi.loadResource(Rez.Strings.SetupTitle) as String,
+                WatchUi.loadResource(Rez.Strings.SetupPrompt) as String,
+                WatchUi.loadResource(Rez.Strings.SetupPromptLine2) as String
+            ];
         }
 
         if (state == GameConstants.STATE_WARMUP) {
