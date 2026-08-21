@@ -5,9 +5,6 @@ import Toybox.Lang;
 // real-time pace differential integrated over time. See project plan.
 class ChaseModel {
 
-    const INITIAL_GAP_METERS = 50.0;
-    const CATCH_THRESHOLD_METERS = 5.0;
-    const ROUND_MAX_SECONDS = 240.0;   // safety valve so a matched pace can't stall a round forever
     const ROUND_ESCALATION_STEP = 0.1; // m/s added to base/max speed per round
 
     var intensity as Number;
@@ -15,6 +12,7 @@ class ChaseModel {
     var characterSpeed as Float;
     var gap as Float;
     var roundElapsed as Float;
+    var roundEndReason as Number;
 
     private var _baseSpeed as Float;
     private var _maxSpeed as Float;
@@ -24,8 +22,9 @@ class ChaseModel {
         self.intensity = intensity;
         roundIndex = 0;
         characterSpeed = 0.0;
-        gap = INITIAL_GAP_METERS;
+        gap = GameConstants.INITIAL_GAP_METERS;
         roundElapsed = 0.0;
+        roundEndReason = GameConstants.REASON_NONE;
         _baseSpeed = 0.0;
         _maxSpeed = 0.0;
         _escalationPerSec = 0.0;
@@ -34,7 +33,8 @@ class ChaseModel {
     function startRound(roundIndex as Number) as Void {
         self.roundIndex = roundIndex;
         roundElapsed = 0.0;
-        gap = INITIAL_GAP_METERS;
+        roundEndReason = GameConstants.REASON_NONE;
+        gap = GameConstants.INITIAL_GAP_METERS;
 
         var params = paramsFor(intensity);
         var escalation = ROUND_ESCALATION_STEP * roundIndex;
@@ -66,6 +66,12 @@ class ChaseModel {
 
         gap += direction * (characterSpeed - playerSpeed) * dt;
 
-        return (gap <= CATCH_THRESHOLD_METERS || roundElapsed >= ROUND_MAX_SECONDS);
+        if (gap <= GameConstants.CATCH_THRESHOLD_METERS) {
+            roundEndReason = GameConstants.REASON_CAUGHT;
+        } else if (roundElapsed >= GameConstants.ROUND_MAX_SECONDS) {
+            roundEndReason = GameConstants.REASON_TIMEOUT;
+        }
+
+        return (roundEndReason != GameConstants.REASON_NONE);
     }
 }

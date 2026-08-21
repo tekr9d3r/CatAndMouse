@@ -10,10 +10,30 @@ class GameDelegate extends WatchUi.BehaviorDelegate {
     function onSelect() as Boolean {
         var controller = getApp().gameController;
         if (controller.state == GameConstants.STATE_SETUP) {
-            WatchUi.pushView(new Rez.Menus.LengthMenu(), new LengthMenuDelegate(), WatchUi.SLIDE_UP);
+            controller.setupConfirm();
+        } else if (controller.state == GameConstants.STATE_BREAK) {
+            controller.continueFromBreak();
         } else {
             controller.togglePause();
         }
         return true;
+    }
+
+    function onNextPage() as Boolean {
+        var controller = getApp().gameController;
+        if (controller.state == GameConstants.STATE_SETUP) {
+            controller.setupMoveNext();
+            return true;
+        }
+        return false;
+    }
+
+    function onPreviousPage() as Boolean {
+        var controller = getApp().gameController;
+        if (controller.state == GameConstants.STATE_SETUP) {
+            controller.setupMovePrevious();
+            return true;
+        }
+        return false;
     }
 }

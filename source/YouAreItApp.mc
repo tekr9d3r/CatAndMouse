@@ -5,12 +5,10 @@ import Toybox.WatchUi;
 class YouAreItApp extends Application.AppBase {
 
     var gameController as GameController;
-    var pendingLengthMinutes as Number;
 
     function initialize() {
         AppBase.initialize();
         gameController = new GameController();
-        pendingLengthMinutes = 10;
     }
 
     function onStart(state as Dictionary?) as Void {

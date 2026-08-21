@@ -1,26 +1,51 @@
 <strings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://developer.garmin.com/downloads/connect-iq/resources.xsd">
     <string id="AppName">Cat and Mouse</string>
 
-    <string id="SetupTitle">CAT &amp; MOUSE</string>
-    <string id="SetupPrompt">Press SELECT</string>
-    <string id="SetupPromptLine2">to begin</string>
-
-    <string id="MenuLengthTitle">Game Length</string>
+    <string id="MenuLengthTitle">GAME LENGTH</string>
     <string id="Length10">10 min</string>
     <string id="Length20">20 min</string>
     <string id="Length30">30 min</string>
 
-    <string id="MenuIntensityTitle">Intensity</string>
+    <string id="MenuIntensityTitle">INTENSITY</string>
     <string id="IntensityEasy">Easy</string>
     <string id="IntensityMedium">Medium</string>
     <string id="IntensityHard">Hard</string>
 
+    <string id="HintSetupNext">SELECT > intensity</string>
+    <string id="HintSetupStart">SELECT > start!</string>
+
+    <string id="GpsSearching">GPS SEARCHING</string>
+    <string id="GpsWeak">GPS WEAK</string>
+    <string id="GpsReady">GPS READY</string>
+
     <string id="StateWarmup">WARM UP</string>
     <string id="StateChased">MOUSE!</string>
     <string id="StateChasing">CAT!</string>
+    <string id="ChaseRun">RUN!</string>
+    <string id="ChasePounce">POUNCE!</string>
     <string id="StatePaused">PAUSED</string>
     <string id="StateSummary">GAME OVER</string>
 
-    <string id="SummaryCaughtByChaser">The Cat got you!</string>
-    <string id="SummaryCaughtTarget">You caught the Mouse!</string>
+    <string id="WarmupWakesIn">THE CAT WAKES IN</string>
+
+    <string id="GameLeftLabel">GAME LEFT</string>
+    <string id="HintBreakToChase">SELECT > your turn to chase</string>
+    <string id="HintBreakToRun">SELECT > your turn to run</string>
+    <string id="BreakCaption">catch your breath first</string>
+
+    <string id="HintPausedResume">SELECT > resume</string>
+
+    <string id="ScoreLabel">SCORE</string>
+    <string id="RoundsLabel">ROUNDS</string>
+    <string id="SummaryFooter">saved to Garmin Connect</string>
+
+    <string id="OutcomeCaughtByCat">The cat got you!</string>
+    <string id="OutcomeEscapedAsMouse">You escaped!</string>
+    <string id="OutcomeCaughtTarget">You caught the mouse!</string>
+    <string id="OutcomeTargetEscaped">The mouse got away!</string>
+
+    <string id="BreakCaughtByCat">THE CAT GOT YOU!</string>
+    <string id="BreakEscapedAsMouse">YOU ESCAPED!</string>
+    <string id="BreakCaughtTarget">YOU CAUGHT THE MOUSE!</string>
+    <string id="BreakTargetEscaped">THE MOUSE GOT AWAY!</string>
 </strings>

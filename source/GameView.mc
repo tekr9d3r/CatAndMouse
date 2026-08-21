@@ -2,12 +2,27 @@ import Toybox.Graphics;
 import Toybox.WatchUi;
 import Toybox.Lang;
 
-// Stage 1 UI is plain text only, drawn programmatically since each state
-// shows a different set of dynamic lines - graphics/layout come in a later stage.
+// Stage 2: thin per-frame dispatcher. Screen geometry lives in
+// ScreenMetrics/HudLayout (source/ui/), content lives in one draw module per
+// state (source/ui/*Screen.mc), so round-vs-rectangle and resolution scaling
+// are handled once instead of duplicated per state as in Stage 1.
 class GameView extends WatchUi.View {
+
+    private var _animClock as AnimationClock;
+    private var _lastState as Number;
 
     function initialize() {
         View.initialize();
+        _animClock = new AnimationClock();
+        _lastState = -1;
+    }
+
+    function onShow() as Void {
+        syncAnimationClock(getApp().gameController.state);
+    }
+
+    function onHide() as Void {
+        _animClock.stop();
     }
 
     function onUpdate(dc as Dc) as Void {
@@ -15,60 +30,38 @@ class GameView extends WatchUi.View {
         dc.clear();
 
         var controller = getApp().gameController;
-        var lines = linesForState(controller);
+        var metrics = new ScreenMetrics(dc);
+        var layout = new HudLayout(metrics);
+        var state = controller.state;
 
-        var centerX = dc.getWidth() / 2;
-        var y = 30;
-        for (var i = 0; i < lines.size(); i += 1) {
-            dc.drawText(centerX, y, Graphics.FONT_SMALL, lines[i] as String, Graphics.TEXT_JUSTIFY_CENTER);
-            y += 26;
+        if (state != _lastState) {
+            syncAnimationClock(state);
+            _lastState = state;
+        }
+
+        if (state == GameConstants.STATE_SETUP) {
+            SetupScreen.draw(dc, metrics, layout, controller, _animClock.phase());
+        } else if (state == GameConstants.STATE_WARMUP) {
+            WarmupScreen.draw(dc, metrics, layout, controller);
+        } else if (state == GameConstants.STATE_CHASED || state == GameConstants.STATE_CHASING) {
+            ChaseScreen.draw(dc, metrics, layout, controller, _animClock.phase());
+        } else if (state == GameConstants.STATE_BREAK) {
+            BreakScreen.draw(dc, metrics, layout, controller, _animClock.phase());
+        } else if (state == GameConstants.STATE_PAUSED) {
+            PausedScreen.draw(dc, metrics, layout, controller);
+        } else {
+            SummaryScreen.draw(dc, metrics, layout, controller);
         }
     }
 
-    private function linesForState(controller as GameController) as Array<String> {
-        var state = controller.state;
-
-        if (state == GameConstants.STATE_SETUP) {
-            return [
-                WatchUi.loadResource(Rez.Strings.SetupTitle) as String,
-                WatchUi.loadResource(Rez.Strings.SetupPrompt) as String,
-                WatchUi.loadResource(Rez.Strings.SetupPromptLine2) as String
-            ];
+    // Animation only needs to run while something on screen is actually
+    // moving - stopped during paused/summary so the timer doesn't keep
+    // waking the CPU and draining battery over what can be a 30+ minute run.
+    private function syncAnimationClock(state as Number) as Void {
+        if (state == GameConstants.STATE_PAUSED || state == GameConstants.STATE_SUMMARY) {
+            _animClock.stop();
+        } else {
+            _animClock.start();
         }
-
-        if (state == GameConstants.STATE_WARMUP) {
-            return [
-                WatchUi.loadResource(Rez.Strings.StateWarmup) as String,
-                "Warm up: " + Utils.formatSeconds(controller.warmupRemaining()),
-                "Pace: " + Utils.speedToPaceString(controller.currentPlayerSpeed())
-            ];
-        }
-
-        if (state == GameConstants.STATE_CHASED || state == GameConstants.STATE_CHASING) {
-            var chase = controller.chase() as ChaseModel;
-            var labelId = (state == GameConstants.STATE_CHASED) ? Rez.Strings.StateChased : Rez.Strings.StateChasing;
-            return [
-                (WatchUi.loadResource(labelId) as String) + "  R" + controller.roundIndex(),
-                "Gap: " + chase.gap.format("%.0f") + " m",
-                "You: " + Utils.speedToPaceString(controller.currentPlayerSpeed()),
-                "Them: " + Utils.speedToPaceString(chase.characterSpeed)
-            ];
-        }
-
-        if (state == GameConstants.STATE_PAUSED) {
-            return [
-                WatchUi.loadResource(Rez.Strings.StatePaused) as String,
-                "Press SELECT",
-                "to resume"
-            ];
-        }
-
-        // STATE_SUMMARY
-        var resultId = controller.playerCaughtByChaser() ? Rez.Strings.SummaryCaughtByChaser : Rez.Strings.SummaryCaughtTarget;
-        return [
-            WatchUi.loadResource(Rez.Strings.StateSummary) as String,
-            WatchUi.loadResource(resultId) as String,
-            "Rounds: " + controller.roundIndex()
-        ];
     }
 }
