@@ -14,10 +14,6 @@ module GameConstants {
     const INTENSITY_MEDIUM = 1;
     const INTENSITY_HARD = 2;
 
-    const SETUP_STEP_LENGTH = 0;
-    const SETUP_STEP_INTENSITY = 1;
-
-    const SETUP_LENGTH_OPTIONS = [10, 20, 30];
     const SETUP_INTENSITY_OPTIONS = [INTENSITY_EASY, INTENSITY_MEDIUM, INTENSITY_HARD];
 
     // Outcome of the round just finished, from the player's perspective.
@@ -45,6 +41,11 @@ module GameConstants {
     // aren't reachable as ClassName.CONST from outside the class - only
     // module consts are, and GameController's scoring needs this value too.
     const ROUND_MAX_SECONDS = 240.0;
+
+    // Warmup is a fixed duration, independent of any game length (there is
+    // no game length anymore - a session runs until ended from the
+    // in-activity menu).
+    const WARMUP_FIXED_SECONDS = 300.0; // 5 minutes
 
     // How long before the warmup ends the "cat wakes up" warning fires -
     // matches the mockup's "eyes open in the last 10s + one warning buzz".
@@ -82,23 +83,6 @@ module GameConstants {
             return DANGER_STAGE_CLOSING;
         }
         return DANGER_STAGE_REST;
-    }
-
-    // --- Scoring. Confirmed formula: a round win pays 50-100 base+bonus
-    // points scaled by intensity; a loss pays 0. Bonus (0-50) rewards margin
-    // for the mouse (gap left over the catch threshold) or speed for the cat
-    // (time left on the clock when the catch happened).
-    const SCORE_BASE_POINTS = 50;
-    const SCORE_MAX_BONUS = 50;
-    const SCORE_BONUS_GAP_SPAN_METERS = 40.0; // full bonus at this much margin over the catch threshold
-
-    function intensityMultiplier(intensity as Number) as Float {
-        if (intensity == INTENSITY_MEDIUM) {
-            return 1.25;
-        } else if (intensity == INTENSITY_HARD) {
-            return 1.5;
-        }
-        return 1.0;
     }
 
     // --- GPS status, shown on the setup screens so the user can see a fix

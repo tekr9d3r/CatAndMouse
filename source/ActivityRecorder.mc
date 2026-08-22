@@ -30,4 +30,17 @@ class ActivityRecorder {
         _session.save();
         _session = null;
     }
+
+    // Used when the user deletes the activity from the in-activity menu -
+    // discards the FIT recording instead of saving it.
+    function discard() as Void {
+        if (_session == null) {
+            return;
+        }
+        if (_session.isRecording()) {
+            _session.stop();
+        }
+        _session.discard();
+        _session = null;
+    }
 }

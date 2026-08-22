@@ -36,4 +36,20 @@ class GameDelegate extends WatchUi.BehaviorDelegate {
         }
         return false;
     }
+
+    // Physical MENU button - opens the in-activity menu (Resume / Change
+    // Intensity / End Activity / Delete Activity), the only way a session
+    // ends now that there's no automatic time limit. Native Menu2/
+    // Confirmation, deliberately not custom-styled - this is a functional
+    // utility menu, not a gameplay screen.
+    function onMenu() as Boolean {
+        var controller = getApp().gameController;
+        var s = controller.state;
+        if (s == GameConstants.STATE_SETUP || s == GameConstants.STATE_SUMMARY) {
+            return false;
+        }
+        controller.ensurePausedForMenu();
+        WatchUi.pushView(new Rez.Menus.ActivityMenu(), new ActivityMenuDelegate(), WatchUi.SLIDE_UP);
+        return true;
+    }
 }

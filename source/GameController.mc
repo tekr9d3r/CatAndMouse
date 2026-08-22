@@ -6,8 +6,6 @@ import Toybox.Activity;
 class GameController {
 
     const TICK_MS = 1000;
-    const WARMUP_FRACTION = 0.075;      // within the 5-10% spec
-    const WARMUP_MAX_SECONDS = 300.0;   // never more than 5 minutes
 
     var state as Number;
 
@@ -17,7 +15,6 @@ class GameController {
     private var _feedback as Feedback;
     private var _gps as GpsStatus;
 
-    private var _totalGameSeconds as Float;
     private var _warmupSeconds as Float;
     private var _elapsedTotal as Float;
     private var _warmupElapsed as Float;
@@ -29,8 +26,6 @@ class GameController {
     private var _lastRoundOutcome as Number;
     private var _warmupWarned as Boolean;
 
-    private var _setupStep as Number;
-    private var _setupLengthIndex as Number;
     private var _setupIntensityIndex as Number;
 
     function initialize() {
@@ -38,7 +33,6 @@ class GameController {
         _recorder = new ActivityRecorder();
         _feedback = new Feedback();
         _gps = new GpsStatus();
-        _totalGameSeconds = 0.0;
         _warmupSeconds = 0.0;
         _elapsedTotal = 0.0;
         _warmupElapsed = 0.0;
@@ -49,8 +43,6 @@ class GameController {
         _pendingNextState = GameConstants.STATE_CHASED;
         _lastRoundOutcome = GameConstants.OUTCOME_ESCAPED_AS_MOUSE;
         _warmupWarned = false;
-        _setupStep = GameConstants.SETUP_STEP_LENGTH;
-        _setupLengthIndex = 0;
         _setupIntensityIndex = 1; // default to Medium
     }
 
@@ -63,46 +55,22 @@ class GameController {
     }
 
     private function setupMove(delta as Number) as Void {
-        if (_setupStep == GameConstants.SETUP_STEP_LENGTH) {
-            var count = GameConstants.SETUP_LENGTH_OPTIONS.size();
-            _setupLengthIndex = ((_setupLengthIndex + delta) + count) % count;
-        } else {
-            var count = GameConstants.SETUP_INTENSITY_OPTIONS.size();
-            _setupIntensityIndex = ((_setupIntensityIndex + delta) + count) % count;
-        }
+        var count = GameConstants.SETUP_INTENSITY_OPTIONS.size();
+        _setupIntensityIndex = ((_setupIntensityIndex + delta) + count) % count;
         WatchUi.requestUpdate();
     }
 
     function setupConfirm() as Void {
-        if (_setupStep == GameConstants.SETUP_STEP_LENGTH) {
-            _setupStep = GameConstants.SETUP_STEP_INTENSITY;
-            WatchUi.requestUpdate();
-        } else {
-            var minutes = GameConstants.SETUP_LENGTH_OPTIONS[_setupLengthIndex] as Number;
-            var intensity = GameConstants.SETUP_INTENSITY_OPTIONS[_setupIntensityIndex] as Number;
-            _setupStep = GameConstants.SETUP_STEP_LENGTH;
-            configureAndStart(minutes, intensity);
-        }
-    }
-
-    function setupStep() as Number {
-        return _setupStep;
-    }
-
-    function setupLengthIndex() as Number {
-        return _setupLengthIndex;
+        var intensity = GameConstants.SETUP_INTENSITY_OPTIONS[_setupIntensityIndex] as Number;
+        configureAndStart(intensity);
     }
 
     function setupIntensityIndex() as Number {
         return _setupIntensityIndex;
     }
 
-    function configureAndStart(lengthMinutes as Number, intensity as Number) as Void {
-        _totalGameSeconds = lengthMinutes * 60.0;
-        _warmupSeconds = _totalGameSeconds * WARMUP_FRACTION;
-        if (_warmupSeconds > WARMUP_MAX_SECONDS) {
-            _warmupSeconds = WARMUP_MAX_SECONDS;
-        }
+    function configureAndStart(intensity as Number) as Void {
+        _warmupSeconds = GameConstants.WARMUP_FIXED_SECONDS;
 
         _chase = new ChaseModel(intensity);
         _elapsedTotal = 0.0;
@@ -117,6 +85,14 @@ class GameController {
 
         _timer = new Timer.Timer();
         _timer.start(method(:onTick), TICK_MS, true);
+    }
+
+    // Applies to the next round only (see ChaseModel.changeIntensity) -
+    // reachable from the in-activity menu while a session is running.
+    function changeIntensity(newIntensity as Number) as Void {
+        if (_chase != null) {
+            (_chase as ChaseModel).changeIntensity(newIntensity);
+        }
     }
 
     function togglePause() as Void {
@@ -135,14 +111,26 @@ class GameController {
         WatchUi.requestUpdate();
     }
 
+    // Guarded wrappers around togglePause() for the in-activity menu, which
+    // needs to pause unconditionally (not toggle) when opened, and only
+    // resume if it actually paused things. Menu access itself is excluded
+    // from SETUP/SUMMARY at the call site (GameDelegate.onMenu()), so those
+    // states never reach here, but the guards make these safe regardless.
+    function ensurePausedForMenu() as Void {
+        if (state != GameConstants.STATE_PAUSED && state != GameConstants.STATE_SETUP && state != GameConstants.STATE_SUMMARY) {
+            togglePause();
+        }
+    }
+
+    function resumeFromMenu() as Void {
+        if (state == GameConstants.STATE_PAUSED) {
+            togglePause();
+        }
+    }
+
     function onTick() as Void {
         var dt = 1.0;
         _elapsedTotal += dt;
-
-        if (_elapsedTotal >= _totalGameSeconds) {
-            endGame();
-            return;
-        }
 
         if (state == GameConstants.STATE_WARMUP) {
             _warmupElapsed += dt;
@@ -169,7 +157,7 @@ class GameController {
                     _lastRoundOutcome = caught ? GameConstants.OUTCOME_CAUGHT_TARGET : GameConstants.OUTCOME_TARGET_ESCAPED;
                     playerWon = caught;
                 }
-                _lastRoundPoints = playerWon ? computeRoundPoints(chase, wasMouse) : 0;
+                _lastRoundPoints = playerWon ? 1 : 0;
                 _score += _lastRoundPoints;
                 var nextState = wasMouse ? GameConstants.STATE_CHASING : GameConstants.STATE_CHASED;
                 _feedback.onRoundEnd(playerWon);
@@ -180,25 +168,6 @@ class GameController {
         }
 
         WatchUi.requestUpdate();
-    }
-
-    // Points for the round that just ended, given a win. bonus (0-50) scales
-    // by margin left for an escaping mouse, or by speed for a catching cat;
-    // the whole thing scales again by intensity. See GameConstants for the
-    // shared constants (SCORE_BASE_POINTS, SCORE_MAX_BONUS, multiplier).
-    private function computeRoundPoints(chase as ChaseModel, wasMouse as Boolean) as Number {
-        var bonus = 0;
-        if (wasMouse) {
-            var margin = chase.gap - GameConstants.CATCH_THRESHOLD_METERS;
-            bonus = Utils.roundToInt(margin / GameConstants.SCORE_BONUS_GAP_SPAN_METERS * GameConstants.SCORE_MAX_BONUS);
-        } else {
-            var remaining = GameConstants.ROUND_MAX_SECONDS - chase.roundElapsed;
-            bonus = Utils.roundToInt(remaining / GameConstants.ROUND_MAX_SECONDS * GameConstants.SCORE_MAX_BONUS);
-        }
-        bonus = Utils.clampInt(bonus, 0, GameConstants.SCORE_MAX_BONUS);
-
-        var multiplier = GameConstants.intensityMultiplier(chase.intensity);
-        return Utils.roundToInt((GameConstants.SCORE_BASE_POINTS + bonus) * multiplier);
     }
 
     private function enterBreak(nextState as Number) as Void {
@@ -222,15 +191,43 @@ class GameController {
         _feedback.onRoundStart();
     }
 
-    private function endGame() as Void {
-        state = GameConstants.STATE_SUMMARY;
+    // The only way a session ends now - there's no more automatic time
+    // limit, this is only ever called from the in-activity menu's "End
+    // Activity" item.
+    function endActivityAndSave() as Void {
         if (_timer != null) {
             _timer.stop();
             _timer = null;
         }
         _recorder.stop();
+        state = GameConstants.STATE_SUMMARY;
         _feedback.onGameSummary();
         WatchUi.requestUpdate();
+    }
+
+    // "Delete Activity" from the in-activity menu - discards the FIT
+    // recording instead of saving it, and returns straight to setup rather
+    // than a summary screen, since there's nothing worth summarizing for a
+    // discarded run.
+    function endActivityAndDiscard() as Void {
+        if (_timer != null) {
+            _timer.stop();
+            _timer = null;
+        }
+        _recorder.discard();
+        resetToSetup();
+        WatchUi.requestUpdate();
+    }
+
+    private function resetToSetup() as Void {
+        state = GameConstants.STATE_SETUP;
+        _chase = null;
+        _elapsedTotal = 0.0;
+        _warmupElapsed = 0.0;
+        _roundIndex = 0;
+        _score = 0;
+        _lastRoundPoints = 0;
+        _warmupWarned = false;
     }
 
     function currentPlayerSpeed() as Float {
@@ -247,10 +244,6 @@ class GameController {
 
     function elapsedTotal() as Float {
         return _elapsedTotal;
-    }
-
-    function totalGameSeconds() as Float {
-        return _totalGameSeconds;
     }
 
     function warmupRemaining() as Float {

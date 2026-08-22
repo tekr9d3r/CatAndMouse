@@ -1,22 +1,19 @@
 <strings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://developer.garmin.com/downloads/connect-iq/resources.xsd">
     <string id="AppName">Cat and Mouse</string>
 
-    <string id="MenuLengthTitle">GAME LENGTH</string>
-    <string id="Length10">10 min</string>
-    <string id="Length20">20 min</string>
-    <string id="Length30">30 min</string>
-
     <string id="MenuIntensityTitle">INTENSITY</string>
     <string id="IntensityEasy">Easy</string>
     <string id="IntensityMedium">Medium</string>
     <string id="IntensityHard">Hard</string>
 
-    <string id="HintSetupNext">SELECT > intensity</string>
     <string id="HintSetupStart">SELECT > start!</string>
 
-    <string id="GpsSearching">GPS SEARCHING</string>
-    <string id="GpsWeak">GPS WEAK</string>
-    <string id="GpsReady">GPS READY</string>
+    <string id="ActivityMenuTitle">MENU</string>
+    <string id="MenuResume">Resume</string>
+    <string id="MenuChangeIntensity">Change Intensity</string>
+    <string id="MenuEndActivity">End Activity</string>
+    <string id="MenuDeleteActivity">Delete Activity</string>
+    <string id="DeleteConfirmMessage">Delete this activity? This cannot be undone.</string>
 
     <string id="StateWarmup">WARM UP</string>
     <string id="StateChased">MOUSE!</string>
@@ -28,7 +25,7 @@
 
     <string id="WarmupWakesIn">THE CAT WAKES IN</string>
 
-    <string id="GameLeftLabel">GAME LEFT</string>
+    <string id="TimeElapsedLabel">TIME</string>
     <string id="HintBreakToChase">SELECT > your turn to chase</string>
     <string id="HintBreakToRun">SELECT > your turn to run</string>
     <string id="BreakCaption">catch your breath first</string>

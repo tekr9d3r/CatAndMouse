@@ -1,0 +1,14 @@
+<resources xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://developer.garmin.com/downloads/connect-iq/resources.xsd">
+    <menu2 id="ActivityMenu" title="@Strings.ActivityMenuTitle">
+        <menu-item id="menu_resume" label="@Strings.MenuResume" />
+        <menu-item id="menu_change_intensity" label="@Strings.MenuChangeIntensity" />
+        <menu-item id="menu_end_activity" label="@Strings.MenuEndActivity" />
+        <menu-item id="menu_delete_activity" label="@Strings.MenuDeleteActivity" />
+    </menu2>
+
+    <menu2 id="IntensitySubmenu" title="@Strings.MenuIntensityTitle">
+        <menu-item id="intensity_easy" label="@Strings.IntensityEasy" />
+        <menu-item id="intensity_medium" label="@Strings.IntensityMedium" />
+        <menu-item id="intensity_hard" label="@Strings.IntensityHard" />
+    </menu2>
+</resources>

@@ -15,12 +15,13 @@ module BreakScreen {
         Hud.drawRim(dc, metrics, Palette.RECOVERY_RIM, 14);
 
         // Round layout is a straight port of mockup 3d's y coordinates
-        // (416px frame): time-left top 56, character ~139, outcome 218,
-        // score 266, then the two bottom-anchored prompt lines.
-        var gameLeft = controller.totalGameSeconds() - controller.elapsedTotal();
+        // (416px frame): time top 56, character ~139, outcome 218,
+        // score 266, then the two bottom-anchored prompt lines. Originally a
+        // "game left" countdown; sessions no longer have a length limit, so
+        // this now counts elapsed time up instead.
         dc.setColor(Palette.MUTED_GREY, Graphics.COLOR_TRANSPARENT);
         var timeY = metrics.isRound ? metrics.px(56) : layout.titleY;
-        Hud.drawCenteredText(dc, metrics, timeY, 1, (WatchUi.loadResource(Rez.Strings.GameLeftLabel) as String) + " " + Utils.formatSeconds(gameLeft));
+        Hud.drawCenteredText(dc, metrics, timeY, 1, (WatchUi.loadResource(Rez.Strings.TimeElapsedLabel) as String) + " " + Utils.formatSeconds(controller.elapsedTotal()));
 
         var nextRole = controller.pendingNextRole();
         var outcome = controller.lastRoundOutcome();

@@ -2,13 +2,15 @@ import Toybox.Graphics;
 import Toybox.WatchUi;
 import Toybox.Lang;
 
-// Graphical replacement for Stage 1's native Menu2 length/intensity pickers,
-// restyled to match the turn 3 setup mockups (3a/3b): a muted-orange rim,
+// Graphical replacement for Stage 1's native Menu2 intensity picker,
+// restyled to match the turn 3 setup mockup (3b): a muted-orange rim,
 // vertically stacked pill chips with the selection as the only filled shape
 // on screen, and a pair of left-edge UP/DOWN triangles marking the
-// button-navigation affordance. UP/DOWN (or a touch swipe, unified by
-// BehaviorDelegate.onNextPage/onPreviousPage) cycles the current step's
-// options, SELECT advances from length to intensity and then starts the game.
+// button-navigation affordance. There's no session-length step anymore -
+// sessions run until ended from the in-activity menu - so this is the only
+// setup screen: UP/DOWN (or a touch swipe, unified by
+// BehaviorDelegate.onNextPage/onPreviousPage) cycles intensity, SELECT
+// starts the game immediately.
 module SetupScreen {
 
     var _previewCharacter as Character?;
@@ -17,62 +19,43 @@ module SetupScreen {
         Hud.drawRim(dc, metrics, Palette.SETUP_RIM, 14);
         drawNavTriangles(dc, metrics);
 
-        var step = controller.setupStep();
-        if (step == GameConstants.SETUP_STEP_LENGTH) {
-            drawTitle(dc, metrics, layout, WatchUi.loadResource(Rez.Strings.MenuLengthTitle) as String);
-            drawGpsStatus(dc, metrics, layout, controller);
-            drawChips(dc, metrics, layout, lengthLabels(), controller.setupLengthIndex(), false);
-            drawHint(dc, metrics, layout, WatchUi.loadResource(Rez.Strings.HintSetupNext) as String);
-        } else {
-            drawTitle(dc, metrics, layout, WatchUi.loadResource(Rez.Strings.MenuIntensityTitle) as String);
-            drawGpsStatus(dc, metrics, layout, controller);
-            drawChips(dc, metrics, layout, intensityLabels(), controller.setupIntensityIndex(), true);
-            drawPreviewCharacter(dc, metrics, layout, controller.setupIntensityIndex(), phase);
-            drawHint(dc, metrics, layout, WatchUi.loadResource(Rez.Strings.HintSetupStart) as String);
-        }
+        drawTitle(dc, metrics, layout, WatchUi.loadResource(Rez.Strings.MenuIntensityTitle) as String);
+        drawGpsStatus(dc, metrics, layout, controller);
+        drawChips(dc, metrics, layout, intensityLabels(), controller.setupIntensityIndex(), true);
+        drawPreviewCharacter(dc, metrics, layout, controller.setupIntensityIndex(), phase);
+        drawHint(dc, metrics, layout, WatchUi.loadResource(Rez.Strings.HintSetupStart) as String);
     }
 
-    // Shown on both setup steps so the user has as much lead time as
+    // Shown on the setup screen so the user has as much lead time as
     // possible to get a fix before starting - informational only, does not
-    // block SELECT. Sits in the gap between the title and the chip stack.
+    // block SELECT. A plain colour dot (no label - text here collided with
+    // the title, see commit history). Sits at the same x as the nav
+    // triangles (px(35) from the left edge) and dead center vertically, in
+    // the gap between the up/down triangles - reuses screen real estate
+    // already proven safe inside the round bezel rather than new geometry,
+    // and stays clear of the chip stack and the intensity step's preview
+    // mouse, which are all on the right/center of the screen.
     function drawGpsStatus(dc as Graphics.Dc, metrics as ScreenMetrics, layout as HudLayout, controller as GameController) as Void {
         var tier = GameConstants.gpsTier(controller.gpsAccuracy());
         var color;
-        var stringId;
         if (tier == GameConstants.GPS_TIER_READY) {
             color = Palette.GREEN;
-            stringId = Rez.Strings.GpsReady;
         } else if (tier == GameConstants.GPS_TIER_WEAK) {
             color = Palette.AMBER;
-            stringId = Rez.Strings.GpsWeak;
         } else {
             color = Palette.RED;
-            stringId = Rez.Strings.GpsSearching;
         }
 
-        var text = WatchUi.loadResource(stringId) as String;
-        var font = metrics.fontFor(0);
-        var textW = dc.getTextWidthInPixels(text, font);
-        var dotR = metrics.px(5);
-        if (dotR < 2) {
-            dotR = 2;
+        var dotR = metrics.px(8);
+        if (dotR < 3) {
+            dotR = 3;
         }
-        var gap = metrics.px(6);
-        var y = metrics.isRound ? (layout.titleY + metrics.px(34)) : (layout.titleY + metrics.px(24));
-        var startX = metrics.centerX - (textW + gap * 2 + dotR * 2) / 2;
+        var x = metrics.px(35);
+        var y = metrics.centerY;
 
         dc.setColor(color, Graphics.COLOR_TRANSPARENT);
-        dc.fillCircle(startX + dotR, y, dotR);
-        dc.drawText(startX + dotR * 2 + gap, y, font, text, Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
+        dc.fillCircle(x, y, dotR);
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-    }
-
-    function lengthLabels() as Array<String> {
-        return [
-            WatchUi.loadResource(Rez.Strings.Length10) as String,
-            WatchUi.loadResource(Rez.Strings.Length20) as String,
-            WatchUi.loadResource(Rez.Strings.Length30) as String
-        ];
     }
 
     function intensityLabels() as Array<String> {
