@@ -26,6 +26,9 @@ class ActivityMenuDelegate extends WatchUi.Menu2InputDelegate {
         } else if (id == :menu_delete_activity) {
             var dialog = new WatchUi.Confirmation(WatchUi.loadResource(Rez.Strings.DeleteConfirmMessage) as String);
             WatchUi.pushView(dialog, new DeleteConfirmDelegate(), WatchUi.SLIDE_IMMEDIATE);
+        } else if (id == :menu_skip_warmup) {
+            WatchUi.popView(WatchUi.SLIDE_DOWN);
+            controller.skipWarmup();
         }
     }
 

@@ -87,8 +87,18 @@ class GameDelegate extends WatchUi.BehaviorDelegate {
         if (s == GameConstants.STATE_HOME || s == GameConstants.STATE_SUMMARY) {
             return false;
         }
+
+        // "Skip Warmup" only makes sense if the menu was opened from the
+        // warmup screen - capture that before ensurePausedForMenu() flips
+        // state to STATE_PAUSED and the original state becomes unreadable.
+        var wasWarmup = (s == GameConstants.STATE_WARMUP);
         controller.ensurePausedForMenu();
-        WatchUi.pushView(new Rez.Menus.ActivityMenu(), new ActivityMenuDelegate(), WatchUi.SLIDE_UP);
+
+        var menu = new Rez.Menus.ActivityMenu();
+        if (wasWarmup) {
+            menu.addItem(new WatchUi.MenuItem(WatchUi.loadResource(Rez.Strings.MenuSkipWarmup) as String, null, :menu_skip_warmup, {}));
+        }
+        WatchUi.pushView(menu, new ActivityMenuDelegate(), WatchUi.SLIDE_UP);
         return true;
     }
 }
