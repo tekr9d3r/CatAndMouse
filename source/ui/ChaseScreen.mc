@@ -3,33 +3,27 @@ import Toybox.WatchUi;
 import Toybox.Lang;
 
 // Shared by STATE_CHASED (player is the mouse) and STATE_CHASING (player is
-// the cat) - same structure, mirrored framing. Rebuilt against turn 2 (mouse
-// role) and turn 4 (cat role) of the design handoff: danger is communicated
-// as a full-screen colour flood plus a rim border, not a meter widget. Three
-// stages share their thresholds with Feedback (GameConstants.dangerStage)
-// so the screen and the haptics never disagree about what's happening:
-//   REST    - black ground, quiet rim, ~70% of a round.
-//   CLOSING - amber rim (mouse role also floods amber); the antagonist
-//             character grows and, if it's the cat, turns into a black
-//             silhouette with glowing eyes.
-//   DANGER  - full flood + strobing rim. Mouse role: red, "RUN!". Cat role:
-//             orange, "POUNCE!". Red never appears in the cat role.
+// the cat). Rebuilt against turn 5 of the design handoff ("revised chase ·
+// both roles"):
+//   - both animals face the same way and run left-to-right: chaser (cat)
+//     behind on the left, prey (mouse) ahead on the right, in both roles;
+//   - the screen edge is a round-time progress ring that drains as the
+//     round runs out - the rim belongs to time now, so danger is carried
+//     entirely by the background flood and the blinking RUN!/POUNCE! label;
+//   - each animal carries its own pace inside its body;
+//   - metres are the biggest thing on screen; no score during a round.
+// Stage thresholds are shared with Feedback (GameConstants.dangerStage) so
+// the screen and the haptics never disagree.
 module ChaseScreen {
 
-    // Character body radii per danger stage, ported from the mockup box
-    // sizes (half of each stage's CSS width). The two roles are NOT
-    // symmetric in the handoff: the player-mouse stays 66px throughout its
-    // own chase (2a-2c) while the threatening cat grows 54->74->104; as the
-    // player, the cat starts already big (74) and grows 74->84->104 (4a-4c)
-    // while the fleeing mouse only creeps up 50->54->56.
-    const OPPONENT_CAT_RADIUS = [27.0, 37.0, 52.0];
-    const PLAYER_MOUSE_RADIUS = [33.0, 33.0, 33.0];
-    const PLAYER_CAT_RADIUS = [37.0, 42.0, 52.0];
-    const OPPONENT_MOUSE_RADIUS = [25.0, 27.0, 28.0];
+    // Character body radii per danger stage, from the turn 5 mockup box
+    // sizes (half of each stage's CSS width): cat 80->84->90, mouse 64->66.
+    const CAT_RADIUS = [40.0, 42.0, 45.0];
+    const MOUSE_RADIUS = [32.0, 33.0, 33.0];
 
     // Edge-to-edge separation between the two characters at max/min gap
-    // (mockups show 112px at the far snapshot, 14px right before a catch).
-    const PAIR_GAP_MAX = 112.0;
+    // (turn 5 shows 116px at the far snapshot, 14px right before a catch).
+    const PAIR_GAP_MAX = 116.0;
     const PAIR_GAP_MIN = 14.0;
 
     var _catCharacter as Character?;
@@ -42,72 +36,97 @@ module ChaseScreen {
         var stage = GameConstants.dangerStage(dangerFrac);
 
         var bg = isChased ? bgForMouse(stage) : bgForCat(stage);
-        var rim = isChased ? rimForMouse(stage) : rimForCat(stage);
-        var titleColor = isChased ? titleColorForMouse(stage) : titleColorForCat(stage);
-        var tint = isChased ? tintForMouse(stage) : tintForCat(stage);
 
         // The colour flood is the whole point: fill edge-to-edge before
         // anything else draws, on top of GameView's default black clear.
         dc.setColor(bg, bg);
         dc.fillRectangle(0, 0, metrics.width, metrics.height);
 
-        drawRim(dc, metrics, rim, stage, phase);
-
-        dc.setColor(titleColor, Graphics.COLOR_TRANSPARENT);
-        Hud.drawCenteredText(dc, metrics, metrics.px(58), 2, titleFor(isChased, stage, controller.roundIndex()));
-
-        drawCharacters(dc, metrics, chase, isChased, stage, dangerFrac, phase, bg);
-        drawGapNumber(dc, metrics, chase.gap, stage, tint);
-        drawFooter(dc, metrics, controller, chase, isChased, stage, tint);
+        drawTimeRing(dc, metrics, chase, isChased, stage);
+        drawDangerShout(dc, metrics, isChased, stage, phase);
+        drawCharacters(dc, metrics, controller, chase, isChased, stage, dangerFrac, phase, bg);
+        drawGapNumber(dc, metrics, chase.gap, stage, isChased ? tintForMouse(stage) : tintForCat(stage));
 
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
     }
 
-    // --- rim ---
+    // --- time ring: fills the screen edge, drains clockwise from the top
+    // as round time runs out (turn 5: "the rim is time left") ---
 
-    function drawRim(dc as Graphics.Dc, metrics as ScreenMetrics, color as Graphics.ColorType, stage as Number, phase as Float) as Void {
-        if (stage == GameConstants.DANGER_STAGE_DANGER) {
-            // Strobe: roughly a .6s on/off cadence, driven off the shared
-            // animation phase rather than a dedicated timer.
-            var flashOn = (((phase / 0.6).toNumber()) % 2) == 0;
-            if (!flashOn) {
-                return;
+    function drawTimeRing(dc as Graphics.Dc, metrics as ScreenMetrics, chase as ChaseModel, isChased as Boolean, stage as Number) as Void {
+        var remaining = 1.0 - (chase.roundElapsed / GameConstants.ROUND_MAX_SECONDS);
+        if (remaining < 0.0) {
+            remaining = 0.0;
+        } else if (remaining > 1.0) {
+            remaining = 1.0;
+        }
+
+        var ringWidth = metrics.px(18);
+        if (ringWidth < 3) {
+            ringWidth = 3;
+        }
+        var radius = (metrics.minDim - ringWidth) / 2;
+
+        dc.setPenWidth(ringWidth);
+
+        // Empty track first, then the remaining-time arc over it.
+        dc.setColor(trackColorFor(isChased, stage), Graphics.COLOR_TRANSPARENT);
+        dc.drawCircle(metrics.centerX, metrics.centerY, radius);
+
+        if (remaining > 0.003) {
+            dc.setColor(fillColorFor(stage), Graphics.COLOR_TRANSPARENT);
+            if (remaining >= 0.997) {
+                dc.drawCircle(metrics.centerX, metrics.centerY, radius);
+            } else {
+                // CSS conic-gradient runs clockwise from 12 o'clock; Dc
+                // degrees run counter-clockwise from 3 o'clock.
+                var sweep = remaining * 360.0;
+                var endDeg = ((90.0 - sweep).toNumber() + 360) % 360;
+                dc.drawArc(metrics.centerX, metrics.centerY, radius, Graphics.ARC_CLOCKWISE, 90, endDeg);
             }
         }
-        var rimWidth = metrics.px(20);
-        if (rimWidth < 2) {
-            rimWidth = 2;
-        }
-        dc.setColor(color, Graphics.COLOR_TRANSPARENT);
-        dc.setPenWidth(rimWidth);
-        if (metrics.isRound) {
-            var radius = (metrics.minDim - rimWidth) / 2;
-            dc.drawCircle(metrics.centerX, metrics.centerY, radius);
-        } else {
-            dc.drawRoundedRectangle(rimWidth / 2, rimWidth / 2, metrics.width - rimWidth, metrics.height - rimWidth, metrics.px(14));
-        }
+
         dc.setPenWidth(1);
     }
 
-    // --- title ---
-
-    function titleFor(isChased as Boolean, stage as Number, roundIndex as Number) as String {
+    function fillColorFor(stage as Number) as Graphics.ColorType {
         if (stage == GameConstants.DANGER_STAGE_DANGER) {
-            var shoutId = isChased ? Rez.Strings.ChaseRun : Rez.Strings.ChasePounce;
-            return WatchUi.loadResource(shoutId) as String;
+            return Palette.RING_FILL_DANGER;
+        } else if (stage == GameConstants.DANGER_STAGE_CLOSING) {
+            return Palette.RING_FILL_CLOSING;
         }
-        var labelId = isChased ? Rez.Strings.StateChased : Rez.Strings.StateChasing;
-        // Middle dot separator per the mockup titles ("MOUSE! · R3").
-        return (WatchUi.loadResource(labelId) as String) + " · R" + roundIndex;
+        return Palette.RING_FILL_REST;
     }
 
-    // --- characters ---
+    // Track darkens toward the flood colour under danger so the drained
+    // ring never disappears against the ground (5c uses #5c0808 on red).
+    function trackColorFor(isChased as Boolean, stage as Number) as Graphics.ColorType {
+        if (stage == GameConstants.DANGER_STAGE_DANGER) {
+            return isChased ? Palette.RING_TRACK_RED : Palette.RING_TRACK_ORANGE;
+        }
+        return Palette.RING_TRACK;
+    }
 
-    // Player on the left, the other character on the right - mirroring the
-    // mockups' framing for both roles. The pair is centered as a unit (the
-    // mockups center the row) and the edge-to-edge separation shrinks
-    // linearly with the real gap, so convergence is literal.
-    function drawCharacters(dc as Graphics.Dc, metrics as ScreenMetrics, chase as ChaseModel, isChased as Boolean, stage as Number, dangerFrac as Float, phase as Float, bg as Graphics.ColorType) as Void {
+    // --- danger shout: the only label left on the chase screen. Blinks in
+    // the top safe area during the final stage (5c note: "RUN! blinking") ---
+
+    function drawDangerShout(dc as Graphics.Dc, metrics as ScreenMetrics, isChased as Boolean, stage as Number, phase as Float) as Void {
+        if (stage != GameConstants.DANGER_STAGE_DANGER) {
+            return;
+        }
+        var flashOn = (((phase / 0.6).toNumber()) % 2) == 0;
+        if (!flashOn) {
+            return;
+        }
+        var shoutId = isChased ? Rez.Strings.ChaseRun : Rez.Strings.ChasePounce;
+        dc.setColor(Palette.WARM_WHITE, Graphics.COLOR_TRANSPARENT);
+        Hud.drawCenteredText(dc, metrics, metrics.px(44), 2, WatchUi.loadResource(shoutId) as String);
+    }
+
+    // --- characters: chaser behind on the left, prey ahead on the right,
+    // both facing/running right (turn 5 - "no more staring contest") ---
+
+    function drawCharacters(dc as Graphics.Dc, metrics as ScreenMetrics, controller as GameController, chase as ChaseModel, isChased as Boolean, stage as Number, dangerFrac as Float, phase as Float, bg as Graphics.ColorType) as Void {
         var gapFrac = chase.gap / GameConstants.INITIAL_GAP_METERS;
         if (gapFrac > 1.0) {
             gapFrac = 1.0;
@@ -116,70 +135,57 @@ module ChaseScreen {
         }
         var sep = metrics.px(PAIR_GAP_MIN + (PAIR_GAP_MAX - PAIR_GAP_MIN) * gapFrac);
 
-        var playerRole = isChased ? GameConstants.ROLE_MOUSE : GameConstants.ROLE_CAT;
-        var otherRole = isChased ? GameConstants.ROLE_CAT : GameConstants.ROLE_MOUSE;
+        var catRadius = metrics.px(CAT_RADIUS[stage]);
+        var mouseRadius = metrics.px(MOUSE_RADIUS[stage]);
 
-        var playerRadius = metrics.px(radiusBaselineFor(playerRole, true, stage));
-        var otherRadius = metrics.px(radiusBaselineFor(otherRole, false, stage));
+        // Center the pair (body edge to body edge) around the screen center,
+        // feet on a shared baseline inside the central safe square.
+        var totalW = catRadius * 2 + sep + mouseRadius * 2;
+        var catX = metrics.centerX - totalW / 2 + catRadius;
+        var mouseX = catX + catRadius + sep + mouseRadius;
+        var feetY = metrics.isRound ? metrics.px(190) : layoutMidY(metrics);
+        var catY = feetY - catRadius;
+        var mouseY = feetY - mouseRadius;
 
-        // Center the pair (body edge to body edge) around the screen center.
-        var totalW = playerRadius * 2 + sep + otherRadius * 2;
-        var playerX = metrics.centerX - totalW / 2 + playerRadius;
-        var otherX = playerX + playerRadius + sep + otherRadius;
+        // Pace inside each body: the virtual animal shows the simulated
+        // speed, the player's animal shows the live GPS pace.
+        var playerPace = Utils.speedToPaceString(controller.currentPlayerSpeed());
+        var characterPace = Utils.speedToPaceString(chase.characterSpeed);
+        var catPace = isChased ? characterPace : playerPace;
+        var mousePace = isChased ? playerPace : characterPace;
 
-        // Characters stand on a shared baseline (the mockup rows are
-        // bottom-aligned, feet at ~y206 of 416).
-        var feetY = metrics.isRound ? metrics.px(206) : layoutMidY(metrics);
-        var playerY = feetY - playerRadius;
-        var otherY = feetY - otherRadius;
+        var cat = characterFor(GameConstants.ROLE_CAT);
+        var mouse = characterFor(GameConstants.ROLE_MOUSE);
 
-        var player = characterFor(playerRole);
-        var other = characterFor(otherRole);
-
-        var playerColorStage = colorStageFor(playerRole, true, isChased, stage);
-        var otherColorStage = colorStageFor(otherRole, false, isChased, stage);
-
-        // Mockup 2a: at rest the threatening cat doesn't animate - only the
-        // player-mouse scurries. Every other stage/role animates both.
-        var otherPhase = phase;
-        if (isChased && stage == GameConstants.DANGER_STAGE_REST) {
-            otherPhase = 0.0;
-        }
-
-        // Facing rule from the mockups: the cat faces its prey, the mouse
-        // faces away from its hunter. With the player always on the left,
-        // that means the whole chase points left in the mouse role and
-        // right in the cat role.
-        var facing = isChased ? -1 : 1;
-
-        player.draw(dc, playerX, playerY, playerRadius, facing, phase, dangerFrac, playerColorStage, bg);
-        other.draw(dc, otherX, otherY, otherRadius, facing, otherPhase, dangerFrac, otherColorStage, bg);
+        cat.paceText = catPace;
+        mouse.paceText = mousePace;
+        cat.draw(dc, catX, catY, catRadius, 1, phase, dangerFrac, catColorStage(isChased, stage), bg);
+        mouse.draw(dc, mouseX, mouseY, mouseRadius, 1, phase, dangerFrac, mouseColorStage(isChased, stage), bg);
     }
 
     function layoutMidY(metrics as ScreenMetrics) as Number {
         return (metrics.height * 0.34).toNumber();
     }
 
-    function radiusBaselineFor(role as Number, isPlayer as Boolean, stage as Number) as Float {
-        if (role == GameConstants.ROLE_CAT) {
-            return isPlayer ? PLAYER_CAT_RADIUS[stage] : OPPONENT_CAT_RADIUS[stage];
-        }
-        return isPlayer ? PLAYER_MOUSE_RADIUS[stage] : OPPONENT_MOUSE_RADIUS[stage];
-    }
-
-    // The player's own cat stays its neutral orange through REST and
-    // CLOSING, only turning into the black/amber "pounce" silhouette at the
-    // DANGER stage - it's not a threat to itself. An opposing cat (chasing
-    // the player-mouse) reads as a threat as soon as it's not at rest.
-    function colorStageFor(role as Number, isPlayerCharacter as Boolean, isChased as Boolean, realStage as Number) as Number {
-        if (role != GameConstants.ROLE_CAT) {
+    // The player's own cat stays its neutral brand orange through REST and
+    // CLOSING (5d), only turning into the black/amber silhouette at the
+    // pounce stage. An opposing cat reads as a threat as soon as the chase
+    // stops being safe (5b/5c).
+    function catColorStage(isChased as Boolean, realStage as Number) as Number {
+        if (isChased) {
             return realStage;
         }
-        var isPlayerCat = (!isChased) && isPlayerCharacter;
-        if (isPlayerCat) {
-            return (realStage == GameConstants.DANGER_STAGE_DANGER) ? GameConstants.DANGER_STAGE_DANGER : GameConstants.DANGER_STAGE_REST;
+        return (realStage == GameConstants.DANGER_STAGE_DANGER) ? GameConstants.DANGER_STAGE_DANGER : GameConstants.DANGER_STAGE_REST;
+    }
+
+    // The mouse warms toward white only under a flood it is part of: every
+    // stage in its own role, but as prey in the cat role it stays cream
+    // until the pounce flood (5d shows cream at closing).
+    function mouseColorStage(isChased as Boolean, realStage as Number) as Number {
+        if (isChased) {
+            return realStage;
         }
-        return realStage;
+        return (realStage == GameConstants.DANGER_STAGE_DANGER) ? GameConstants.DANGER_STAGE_DANGER : GameConstants.DANGER_STAGE_REST;
     }
 
     function characterFor(role as Number) as Character {
@@ -195,22 +201,22 @@ module ChaseScreen {
         return _mouseCharacter as Character;
     }
 
-    // --- gap number ---
+    // --- gap number: the biggest thing on screen (156px of 416 in the
+    // mockups, top y198) ---
 
     function drawGapNumber(dc as Graphics.Dc, metrics as ScreenMetrics, gap as Float, stage as Number, tint as Graphics.ColorType) as Void {
         var numText = gap.format("%.0f");
         var unitText = "m";
-        var unitFont = metrics.fontFor(1);
+        var unitFont = metrics.fontFor(2);
         var unitW = dc.getTextWidthInPixels(unitText, unitFont);
         var unitH = dc.getFontHeight(unitFont);
 
-        // The mockup number is 74px tall in a 416 frame and 2 digits wide;
-        // Garmin's big number fonts vary a lot per device, so pick the
-        // largest one that respects both the design's height band and (for
-        // 3+ digit gaps - the player can outrun the cat) the screen width.
+        // Pick the largest number font that respects the design's height
+        // band and (for 3+ digit gaps - the player can outrun the cat) the
+        // screen width.
         var font = numberFontFor(metrics);
-        var maxW = (metrics.width * 0.62).toNumber();
-        var maxH = metrics.px(120);
+        var maxW = (metrics.width * 0.72).toNumber();
+        var maxH = metrics.px(175);
         while ((dc.getFontHeight(font) > maxH || dc.getTextWidthInPixels(numText, font) + unitW > maxW)
                 && font != smallerNumberFont(font)) {
             font = smallerNumberFont(font);
@@ -218,11 +224,11 @@ module ChaseScreen {
         var numW = dc.getTextWidthInPixels(numText, font);
         var numH = dc.getFontHeight(font);
 
-        // Anchor on the mockup number's vertical center (top 242 + 74/2 of
+        // Anchor on the mockup number's vertical center (top 198 + 156/2 of
         // 416) so any Garmin number font sits where the design's digits do.
         var y = metrics.isRound
-            ? (metrics.px(279) - numH / 2)
-            : ((metrics.height * 0.56).toNumber() - numH / 2);
+            ? (metrics.px(276) - numH / 2)
+            : ((metrics.height * 0.6).toNumber() - numH / 2);
         var startX = metrics.centerX - (numW + unitW) / 2;
 
         // Mockups: cream at rest, warm white once the screen floods.
@@ -239,67 +245,22 @@ module ChaseScreen {
 
     function numberFontFor(metrics as ScreenMetrics) as Graphics.FontType {
         if (metrics.scale >= 0.85) {
-            return Graphics.FONT_NUMBER_HOT;
+            return Graphics.FONT_NUMBER_THAI_HOT;
         } else if (metrics.scale >= 0.55) {
-            return Graphics.FONT_NUMBER_MEDIUM;
+            return Graphics.FONT_NUMBER_HOT;
         }
-        return Graphics.FONT_NUMBER_MILD;
+        return Graphics.FONT_NUMBER_MEDIUM;
     }
 
     function smallerNumberFont(font as Graphics.FontType) as Graphics.FontType {
-        if (font == Graphics.FONT_NUMBER_HOT) {
+        if (font == Graphics.FONT_NUMBER_THAI_HOT) {
+            return Graphics.FONT_NUMBER_HOT;
+        } else if (font == Graphics.FONT_NUMBER_HOT) {
             return Graphics.FONT_NUMBER_MEDIUM;
         } else if (font == Graphics.FONT_NUMBER_MEDIUM) {
             return Graphics.FONT_NUMBER_MILD;
         }
         return font;
-    }
-
-    // --- footer: pace row + score ---
-
-    function drawFooter(dc as Graphics.Dc, metrics as ScreenMetrics, controller as GameController, chase as ChaseModel, isChased as Boolean, stage as Number, tint as Graphics.ColorType) as Void {
-        var youLabel = "YOU " + Utils.speedToPaceString(controller.currentPlayerSpeed());
-        var themLabelPrefix = isChased ? "CAT " : "MOUSE ";
-        var themLabel = themLabelPrefix + Utils.speedToPaceString(chase.characterSpeed);
-
-        var font = metrics.fontFor(1);
-        var gap = metrics.px(26);
-        var youW = dc.getTextWidthInPixels(youLabel, font);
-        var themW = dc.getTextWidthInPixels(themLabel, font);
-        var startX = metrics.centerX - (youW + gap + themW) / 2;
-
-        // The mockups anchor the pace row 70px and the score 46px off the
-        // bottom edge (CSS bottom offsets), so anchor by text bottom here.
-        var paceY = metrics.isRound
-            ? (metrics.height - metrics.px(70) - dc.getFontHeight(font))
-            : (metrics.height - metrics.px(64));
-
-        // At rest both paces are off-white with the cat's entry picked out
-        // in brand orange - YOU when playing the cat, CAT when fleeing it.
-        // Flooded stages tint the whole row (2b/2c/4b/4c).
-        var restPace = (stage == GameConstants.DANGER_STAGE_REST);
-        var paceColor = restPace ? Palette.OFF_WHITE : paceColorFor(isChased, stage);
-        var youColor = (restPace && !isChased) ? Palette.BRAND_ORANGE : paceColor;
-        var themColor = (restPace && isChased) ? Palette.BRAND_ORANGE : paceColor;
-
-        dc.setColor(youColor, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(startX, paceY, font, youLabel, Graphics.TEXT_JUSTIFY_LEFT);
-        dc.setColor(themColor, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(startX + youW + gap, paceY, font, themLabel, Graphics.TEXT_JUSTIFY_LEFT);
-
-        var scoreFont = metrics.fontFor(0);
-        var scoreY = metrics.isRound
-            ? (metrics.height - metrics.px(46) - dc.getFontHeight(scoreFont))
-            : (metrics.height - metrics.px(30));
-        dc.setColor(tint, Graphics.COLOR_TRANSPARENT);
-        Hud.drawCenteredText(dc, metrics, scoreY, 0, "SCORE " + controller.score());
-    }
-
-    function paceColorFor(isChased as Boolean, stage as Number) as Graphics.ColorType {
-        if (isChased) {
-            return (stage == GameConstants.DANGER_STAGE_DANGER) ? Palette.MOUSE_PACE_DANGER : Palette.MOUSE_PACE_CLOSING;
-        }
-        return (stage == GameConstants.DANGER_STAGE_DANGER) ? Palette.CAT_PACE_DANGER : Palette.CAT_PACE_CLOSING;
     }
 
     // --- colour lookups (Palette holds the exact mockup hex values) ---
@@ -313,33 +274,6 @@ module ChaseScreen {
         return Palette.MOUSE_BG_REST;
     }
 
-    function rimForMouse(stage as Number) as Graphics.ColorType {
-        if (stage == GameConstants.DANGER_STAGE_DANGER) {
-            return Palette.MOUSE_RIM_DANGER;
-        } else if (stage == GameConstants.DANGER_STAGE_CLOSING) {
-            return Palette.MOUSE_RIM_CLOSING;
-        }
-        return Palette.MOUSE_RIM_REST;
-    }
-
-    function titleColorForMouse(stage as Number) as Graphics.ColorType {
-        if (stage == GameConstants.DANGER_STAGE_DANGER) {
-            return Palette.MOUSE_TITLE_DANGER;
-        } else if (stage == GameConstants.DANGER_STAGE_CLOSING) {
-            return Palette.MOUSE_TITLE_CLOSING;
-        }
-        return Palette.MOUSE_TITLE_REST;
-    }
-
-    function tintForMouse(stage as Number) as Graphics.ColorType {
-        if (stage == GameConstants.DANGER_STAGE_DANGER) {
-            return Palette.MOUSE_ACCENT_DANGER;
-        } else if (stage == GameConstants.DANGER_STAGE_CLOSING) {
-            return Palette.MOUSE_ACCENT_CLOSING;
-        }
-        return Palette.MUTED_GREY;
-    }
-
     function bgForCat(stage as Number) as Graphics.ColorType {
         if (stage == GameConstants.DANGER_STAGE_DANGER) {
             return Palette.CAT_BG_DANGER;
@@ -349,22 +283,13 @@ module ChaseScreen {
         return Palette.CAT_BG_REST;
     }
 
-    function rimForCat(stage as Number) as Graphics.ColorType {
+    function tintForMouse(stage as Number) as Graphics.ColorType {
         if (stage == GameConstants.DANGER_STAGE_DANGER) {
-            return Palette.CAT_RIM_DANGER;
+            return Palette.MOUSE_ACCENT_DANGER;
         } else if (stage == GameConstants.DANGER_STAGE_CLOSING) {
-            return Palette.CAT_RIM_CLOSING;
+            return Palette.MOUSE_ACCENT_CLOSING;
         }
-        return Palette.CAT_RIM_REST;
-    }
-
-    function titleColorForCat(stage as Number) as Graphics.ColorType {
-        if (stage == GameConstants.DANGER_STAGE_DANGER) {
-            return Palette.CAT_TITLE_DANGER;
-        } else if (stage == GameConstants.DANGER_STAGE_CLOSING) {
-            return Palette.CAT_TITLE_CLOSING;
-        }
-        return Palette.CAT_TITLE_REST;
+        return Palette.MUTED_GREY;
     }
 
     function tintForCat(stage as Number) as Graphics.ColorType {

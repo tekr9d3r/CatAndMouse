@@ -2,6 +2,7 @@ import Toybox.Lang;
 import Toybox.Timer;
 import Toybox.WatchUi;
 import Toybox.Activity;
+import Toybox.System;
 
 class GameController {
 
@@ -27,9 +28,13 @@ class GameController {
     private var _warmupWarned as Boolean;
 
     private var _setupIntensityIndex as Number;
+    private var _homeIndex as Number;
+    private var _instructionsPage as Number;
 
     function initialize() {
-        state = GameConstants.STATE_SETUP;
+        state = GameConstants.STATE_HOME;
+        _homeIndex = GameConstants.HOME_START;
+        _instructionsPage = 0;
         _recorder = new ActivityRecorder();
         _feedback = new Feedback();
         _gps = new GpsStatus();
@@ -44,6 +49,64 @@ class GameController {
         _lastRoundOutcome = GameConstants.OUTCOME_ESCAPED_AS_MOUSE;
         _warmupWarned = false;
         _setupIntensityIndex = 1; // default to Medium
+    }
+
+    // --- Home menu (turn 6, 6a): START / HOW TO PLAY / EXIT. START is
+    // pre-selected so a returning player opens and presses once.
+
+    function homeIndex() as Number {
+        return _homeIndex;
+    }
+
+    function homeMove(delta as Number) as Void {
+        var count = GameConstants.HOME_OPTION_COUNT;
+        _homeIndex = ((_homeIndex + delta) + count) % count;
+        WatchUi.requestUpdate();
+    }
+
+    function homeConfirm() as Void {
+        if (_homeIndex == GameConstants.HOME_START) {
+            state = GameConstants.STATE_SETUP;
+        } else if (_homeIndex == GameConstants.HOME_HOW_TO) {
+            _instructionsPage = 0;
+            state = GameConstants.STATE_INSTRUCTIONS;
+        } else {
+            System.exit();
+        }
+        WatchUi.requestUpdate();
+    }
+
+    // --- Instructions (turn 6, 6b-6d): three cards. SELECT advances and
+    // finally returns home; UP/DOWN pages both ways (wrapping backwards to
+    // home from the first card would be surprising, so it clamps).
+
+    function instructionsPage() as Number {
+        return _instructionsPage;
+    }
+
+    function instructionsMove(delta as Number) as Void {
+        var next = _instructionsPage + delta;
+        if (next < 0) {
+            next = 0;
+        } else if (next >= GameConstants.INSTRUCTIONS_PAGE_COUNT) {
+            next = GameConstants.INSTRUCTIONS_PAGE_COUNT - 1;
+        }
+        _instructionsPage = next;
+        WatchUi.requestUpdate();
+    }
+
+    function instructionsAdvance() as Void {
+        if (_instructionsPage >= GameConstants.INSTRUCTIONS_PAGE_COUNT - 1) {
+            state = GameConstants.STATE_HOME;
+        } else {
+            _instructionsPage += 1;
+        }
+        WatchUi.requestUpdate();
+    }
+
+    function returnHome() as Void {
+        state = GameConstants.STATE_HOME;
+        WatchUi.requestUpdate();
     }
 
     function setupMoveNext() as Void {
@@ -100,7 +163,8 @@ class GameController {
             state = _stateBeforePause;
             _timer = new Timer.Timer();
             _timer.start(method(:onTick), TICK_MS, true);
-        } else if (state != GameConstants.STATE_SETUP && state != GameConstants.STATE_SUMMARY) {
+        } else if (state != GameConstants.STATE_SETUP && state != GameConstants.STATE_SUMMARY
+                && state != GameConstants.STATE_HOME && state != GameConstants.STATE_INSTRUCTIONS) {
             _stateBeforePause = state;
             state = GameConstants.STATE_PAUSED;
             if (_timer != null) {
@@ -117,7 +181,8 @@ class GameController {
     // from SETUP/SUMMARY at the call site (GameDelegate.onMenu()), so those
     // states never reach here, but the guards make these safe regardless.
     function ensurePausedForMenu() as Void {
-        if (state != GameConstants.STATE_PAUSED && state != GameConstants.STATE_SETUP && state != GameConstants.STATE_SUMMARY) {
+        if (state != GameConstants.STATE_PAUSED && state != GameConstants.STATE_SETUP && state != GameConstants.STATE_SUMMARY
+                && state != GameConstants.STATE_HOME && state != GameConstants.STATE_INSTRUCTIONS) {
             togglePause();
         }
     }
@@ -206,21 +271,22 @@ class GameController {
     }
 
     // "Delete Activity" from the in-activity menu - discards the FIT
-    // recording instead of saving it, and returns straight to setup rather
-    // than a summary screen, since there's nothing worth summarizing for a
-    // discarded run.
+    // recording instead of saving it, and returns straight to the home menu
+    // rather than a summary screen, since there's nothing worth summarizing
+    // for a discarded run.
     function endActivityAndDiscard() as Void {
         if (_timer != null) {
             _timer.stop();
             _timer = null;
         }
         _recorder.discard();
-        resetToSetup();
+        resetToHome();
         WatchUi.requestUpdate();
     }
 
-    private function resetToSetup() as Void {
-        state = GameConstants.STATE_SETUP;
+    private function resetToHome() as Void {
+        state = GameConstants.STATE_HOME;
+        _homeIndex = GameConstants.HOME_START;
         _chase = null;
         _elapsedTotal = 0.0;
         _warmupElapsed = 0.0;

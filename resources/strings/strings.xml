@@ -1,6 +1,23 @@
 <strings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://developer.garmin.com/downloads/connect-iq/resources.xsd">
     <string id="AppName">Cat and Mouse</string>
 
+    <string id="HomeTitleLeft">CAT</string>
+    <string id="HomeTitleAmp">&amp;</string>
+    <string id="HomeTitleRight">MOUSE</string>
+    <string id="HomeStart">START</string>
+    <string id="HomeHowTo">HOW TO PLAY</string>
+    <string id="HomeExit">EXIT</string>
+
+    <string id="InstrTitleGame">THE GAME</string>
+    <string id="InstrBodyGame">Your pace moves your animal. Run faster to close the gap - or keep it open.</string>
+    <string id="InstrTitleRound">A ROUND</string>
+    <string id="InstrBodyRound">The rim is time left. Mouse: survive it. Cat: catch before it empties. Then you swap.</string>
+    <string id="InstrTitleSignals">EYES UP</string>
+    <string id="InstrAmber">Amber · closing in</string>
+    <string id="InstrRed">Red · nearly caught</string>
+    <string id="InstrBuzz">Buzz · gap changed</string>
+    <string id="InstrFooter">Play by feel. Look down when it buzzes.</string>
+
     <string id="MenuIntensityTitle">INTENSITY</string>
     <string id="IntensityEasy">Easy</string>
     <string id="IntensityMedium">Medium</string>

@@ -39,7 +39,11 @@ class GameView extends WatchUi.View {
             _lastState = state;
         }
 
-        if (state == GameConstants.STATE_SETUP) {
+        if (state == GameConstants.STATE_HOME) {
+            HomeScreen.draw(dc, metrics, layout, controller, _animClock.phase());
+        } else if (state == GameConstants.STATE_INSTRUCTIONS) {
+            InstructionsScreen.draw(dc, metrics, layout, controller);
+        } else if (state == GameConstants.STATE_SETUP) {
             SetupScreen.draw(dc, metrics, layout, controller, _animClock.phase());
         } else if (state == GameConstants.STATE_WARMUP) {
             WarmupScreen.draw(dc, metrics, layout, controller);
@@ -58,7 +62,10 @@ class GameView extends WatchUi.View {
     // moving - stopped during paused/summary so the timer doesn't keep
     // waking the CPU and draining battery over what can be a 30+ minute run.
     private function syncAnimationClock(state as Number) as Void {
-        if (state == GameConstants.STATE_PAUSED || state == GameConstants.STATE_SUMMARY) {
+        // Instructions are deliberately static (turn 6: "instructions
+        // shouldn't compete with the copy"), so the clock stops there too.
+        if (state == GameConstants.STATE_PAUSED || state == GameConstants.STATE_SUMMARY
+                || state == GameConstants.STATE_INSTRUCTIONS) {
             _animClock.stop();
         } else {
             _animClock.start();

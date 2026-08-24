@@ -26,6 +26,49 @@ module Hud {
         dc.drawText(metrics.centerX, y, metrics.fontFor(t), text, Graphics.TEXT_JUSTIFY_CENTER);
     }
 
+    // Greedy word-wrap: draws `text` centered in lines no wider than
+    // maxWidth, starting at y. Returns the y just below the last line.
+    // Needed for the instruction cards' multi-sentence copy - Dc.drawText
+    // has no wrapping of its own.
+    function drawWrappedCenteredText(dc as Graphics.Dc, metrics as ScreenMetrics, y as Number, tier as Number, text as String, maxWidth as Number) as Number {
+        var font = metrics.fontFor(tier);
+        var lineH = dc.getFontHeight(font);
+        var words = splitWords(text);
+        var line = "";
+        for (var i = 0; i < words.size(); i += 1) {
+            var candidate = (line.length() == 0) ? (words[i] as String) : (line + " " + words[i]);
+            if (line.length() > 0 && dc.getTextWidthInPixels(candidate, font) > maxWidth) {
+                dc.drawText(metrics.centerX, y, font, line, Graphics.TEXT_JUSTIFY_CENTER);
+                y += lineH;
+                line = words[i] as String;
+            } else {
+                line = candidate;
+            }
+        }
+        if (line.length() > 0) {
+            dc.drawText(metrics.centerX, y, font, line, Graphics.TEXT_JUSTIFY_CENTER);
+            y += lineH;
+        }
+        return y;
+    }
+
+    function splitWords(text as String) as Array<String> {
+        var words = [] as Array<String>;
+        var rest = text;
+        var idx = rest.find(" ");
+        while (idx != null) {
+            if (idx > 0) {
+                words.add(rest.substring(0, idx) as String);
+            }
+            rest = rest.substring(idx + 1, rest.length()) as String;
+            idx = rest.find(" ");
+        }
+        if (rest.length() > 0) {
+            words.add(rest);
+        }
+        return words;
+    }
+
     // Draws `lines` centered, one per row, starting at layout.bodyStartY and
     // stepping by layout.bodyLineHeight. Returns the y just below the last line.
     function drawBody(dc as Graphics.Dc, metrics as ScreenMetrics, layout as HudLayout, tier as Number, lines as Array<String>) as Number {

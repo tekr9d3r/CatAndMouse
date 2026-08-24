@@ -26,6 +26,18 @@ module Palette {
     const RED = 0xff2d2d;
     const GREEN = 0x4fd97a;
     const BLUE = 0x2ea8ff;
+    const PINK_NOSE = 0xff7a9a;
+
+    // Turn 5 chase: the screen edge is a round-time progress ring that
+    // drains as the round runs out. Fill colour tracks the danger stage,
+    // the empty track is dark - near-black normally, deep red/orange under
+    // the danger floods so the ring never vanishes against the ground.
+    const RING_TRACK = DK_PANEL;
+    const RING_TRACK_RED = 0x5c0808;
+    const RING_TRACK_ORANGE = 0x4a2604;
+    const RING_FILL_REST = BLUE;
+    const RING_FILL_CLOSING = AMBER;
+    const RING_FILL_DANGER = WARM_WHITE;
 
     // Chase screen - mouse role (turn 2)
     const MOUSE_BG_REST = BLACK;

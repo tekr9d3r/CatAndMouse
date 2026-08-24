@@ -9,6 +9,16 @@ module GameConstants {
     const STATE_PAUSED = 4;
     const STATE_SUMMARY = 5;
     const STATE_BREAK = 6;
+    const STATE_HOME = 7;
+    const STATE_INSTRUCTIONS = 8;
+
+    // Home menu rows (turn 6 mockup 6a), top to bottom.
+    const HOME_START = 0;
+    const HOME_HOW_TO = 1;
+    const HOME_EXIT = 2;
+    const HOME_OPTION_COUNT = 3;
+
+    const INSTRUCTIONS_PAGE_COUNT = 3;
 
     const INTENSITY_EASY = 0;
     const INTENSITY_MEDIUM = 1;
