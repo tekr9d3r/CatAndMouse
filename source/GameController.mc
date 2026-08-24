@@ -193,6 +193,20 @@ class GameController {
         }
     }
 
+    // "Skip Warmup" from the in-activity menu - only offered while the menu
+    // was opened from STATE_WARMUP (see GameDelegate.openActivityMenu()).
+    // Jumps straight into the first chase round instead of resuming warmup,
+    // and restarts the timer the menu had stopped via ensurePausedForMenu().
+    function skipWarmup() as Void {
+        _warmupElapsed = _warmupSeconds;
+        beginRound(GameConstants.STATE_CHASED);
+        if (_timer == null) {
+            _timer = new Timer.Timer();
+            _timer.start(method(:onTick), TICK_MS, true);
+        }
+        WatchUi.requestUpdate();
+    }
+
     function onTick() as Void {
         var dt = 1.0;
         _elapsedTotal += dt;
@@ -294,6 +308,16 @@ class GameController {
         _score = 0;
         _lastRoundPoints = 0;
         _warmupWarned = false;
+    }
+
+    // Total session distance so far, from the live activity - shown on the
+    // break screen's stats row (turn 10).
+    function totalDistanceMeters() as Float {
+        var info = Activity.getActivityInfo();
+        if (info != null && info.elapsedDistance != null) {
+            return info.elapsedDistance;
+        }
+        return 0.0;
     }
 
     function currentPlayerSpeed() as Float {
