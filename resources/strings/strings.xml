@@ -51,7 +51,7 @@
     <string id="BreakNextRoleCat">CAT</string>
     <string id="BreakNextRoleMouse">MOUSE</string>
 
-    <string id="HintPausedResume">SELECT > resume</string>
+    <string id="PausedResumeLabel">RESUME</string>
 
     <string id="RoundsLabel">ROUNDS</string>
     <string id="SummaryAvgLabel">AVG /KM</string>

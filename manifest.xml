@@ -9,6 +9,9 @@
             <iq:product id="venusq2"/>
             <iq:product id="venu2"/>
             <iq:product id="venu3"/>
+            <iq:product id="fr265"/>
+            <iq:product id="fr965"/>
+            <iq:product id="vivoactive5"/>
         </iq:products>
 
         <iq:permissions>

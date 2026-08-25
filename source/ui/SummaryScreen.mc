@@ -56,27 +56,41 @@ module SummaryScreen {
         (_mouseCharacter as Character).draw(dc, mouseX, feetY - mouseRadius, mouseRadius, 1, slowPhase, 0.0, GameConstants.DANGER_STAGE_REST, Palette.BLACK);
     }
 
-    // The cat's tail sweeps out of its right side and hooks down around
-    // toward the mouse - the mockup's bottom-right quarter-arc. Drawn
-    // separately from Character since it's a relationship between the two,
-    // and bobbed with the same sway the truce pose applies to the bodies.
+    // The cat's tail sweeps out of its lower-right side and hooks toward
+    // the mouse. Built as a short polyline from points computed directly
+    // off the cat's own body circle (angle 0 = 3 o'clock, 90 = 6 o'clock,
+    // screen coords) rather than an independently-placed Dc.drawArc - the
+    // first point is on the body circle by construction, so the tail is
+    // guaranteed to touch the cat regardless of Dc's arc sweep-direction
+    // convention (which is exactly what left it floating disconnected
+    // before: an arc drawn around a separate off-body circle, with no
+    // guarantee the visible quarter-sweep actually reached the body).
     function drawCurledTail(dc as Graphics.Dc, metrics as ScreenMetrics, catX as Number, catY as Number, catRadius as Number, phase as Float) as Void {
         var bob = (Math.sin(phase) * catRadius * 0.08).toNumber();
-        var r = (catRadius * 0.72).toNumber();
         var penW = (catRadius * 0.19).toNumber();
         if (penW < 2) {
             penW = 2;
         }
-        // Arc center sits just past the cat's right edge, at mid-body
-        // height (mockup: box x 52..92 of 64, arc radius 26).
-        var cx = catX + catRadius + (catRadius * 0.1).toNumber();
-        var cy = catY + (catRadius * 0.1).toNumber() + bob;
+
+        var angles = [15.0, 45.0, 75.0];
+        var radii = [1.0, 1.35, 1.28];
+        var points = new [angles.size()];
+        for (var i = 0; i < angles.size(); i += 1) {
+            var rad = Math.toRadians(angles[i]);
+            var r = catRadius * radii[i];
+            points[i] = [
+                catX + (r * Math.cos(rad)).toNumber(),
+                catY + (r * Math.sin(rad)).toNumber() + bob
+            ];
+        }
 
         dc.setColor(Palette.BRAND_ORANGE, Graphics.COLOR_TRANSPARENT);
         dc.setPenWidth(penW);
-        // Bottom-right quadrant: from pointing down (270 deg) around to
-        // pointing right (0 deg).
-        dc.drawArc(cx, cy, r, Graphics.ARC_COUNTER_CLOCKWISE, 270, 0);
+        for (var i = 0; i < points.size() - 1; i += 1) {
+            var a = points[i] as Array<Number>;
+            var b = points[i + 1] as Array<Number>;
+            dc.drawLine(a[0], a[1], b[0], b[1]);
+        }
         dc.setPenWidth(1);
     }
 
@@ -119,7 +133,12 @@ module SummaryScreen {
         var paceLabel = WatchUi.loadResource(Rez.Strings.SummaryAvgLabel) as String;
         var roundsLabel = WatchUi.loadResource(Rez.Strings.RoundsLabel) as String;
 
-        var valueFont = metrics.fontFor(2);
+        // Value font stepped down a tier from the original design (was
+        // fontFor(2)) - the value+label pair was overflowing into the saved
+        // checkmark below on-device. labelFont was already at the smallest
+        // system size (fontFor(0) = FONT_XTINY on most devices), so the
+        // value is the only lever left to free vertical room.
+        var valueFont = metrics.fontFor(1);
         var labelFont = metrics.fontFor(0);
         var valueY = metrics.px(268);
         var labelY = valueY + dc.getFontHeight(valueFont) + metrics.px(3);
