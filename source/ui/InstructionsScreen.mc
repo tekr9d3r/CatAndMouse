@@ -6,9 +6,13 @@ import Toybox.Lang;
 // actually needs - what the game is (pace is the controller), how a round
 // works (the rim is time), and what the colours/buzzes mean. Blue recovery
 // rim, blue letterspaced card title. UP/DOWN pages, SELECT advances and
-// finally returns home - a bottom "SELECT >" hint marks that rather than
-// page dots (which got dropped in favor of this, alongside shrinking the
-// body copy a tier, after both text and dots were overflowing on-device).
+// finally returns home.
+//
+// Turn 12: how to advance is now shown purely by position - a green arrow
+// at the 2 o'clock edge pointing at the SELECT button - instead of a bottom
+// "SELECT > next" line, which the body copy kept overflowing into. The copy
+// itself is bounded to the space above that old hint line so a card that
+// wraps to one more line shrinks a tier instead of running off the card.
 // Deliberately no animation - instructions shouldn't compete with the copy.
 module InstructionsScreen {
 
@@ -27,8 +31,17 @@ module InstructionsScreen {
             drawPageSignals(dc, metrics);
         }
 
-        drawContinueHint(dc, metrics, page);
+        drawSelectIndicator(dc, metrics);
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+    }
+
+    // Bottom of the space the body copy may use: where the old "SELECT >"
+    // hint line used to start, which is as low as centered text can sit
+    // before the round card's curve starts eating the ends of a line.
+    function bodyBottom(metrics as ScreenMetrics) as Number {
+        return metrics.isRound
+            ? (metrics.height - metrics.px(56))
+            : (metrics.height - metrics.px(30));
     }
 
     function drawTitle(dc as Graphics.Dc, metrics as ScreenMetrics, titleId as ResourceId) as Void {
@@ -59,7 +72,7 @@ module InstructionsScreen {
         (_mouseCharacter as Character).draw(dc, mouseX, feetY - mouseRadius, mouseRadius, 1, 0.0, 0.0, GameConstants.DANGER_STAGE_REST, Palette.BLACK);
 
         dc.setColor(Palette.CREAM, Graphics.COLOR_TRANSPARENT);
-        Hud.drawWrappedCenteredText(dc, metrics, metrics.px(206), 1, WatchUi.loadResource(Rez.Strings.InstrBodyGame) as String, metrics.width - metrics.px(120));
+        Hud.drawFitWrappedCenteredText(dc, metrics, metrics.px(206), 1, WatchUi.loadResource(Rez.Strings.InstrBodyGame) as String, metrics.width - metrics.px(120), bodyBottom(metrics));
     }
 
     // 6c A ROUND: the round screen in miniature - a draining time ring with
@@ -94,7 +107,7 @@ module InstructionsScreen {
         dc.drawText(startX + numW, cy, unitFont, "m", Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
 
         dc.setColor(Palette.CREAM, Graphics.COLOR_TRANSPARENT);
-        Hud.drawWrappedCenteredText(dc, metrics, metrics.px(232), 1, WatchUi.loadResource(Rez.Strings.InstrBodyRound) as String, metrics.width - metrics.px(104));
+        Hud.drawFitWrappedCenteredText(dc, metrics, metrics.px(232), 1, WatchUi.loadResource(Rez.Strings.InstrBodyRound) as String, metrics.width - metrics.px(104), bodyBottom(metrics));
     }
 
     // 6d EYES UP: the safety card - what amber, red, and a buzz mean, so
@@ -131,19 +144,27 @@ module InstructionsScreen {
         dc.drawText(textX, y, font, WatchUi.loadResource(Rez.Strings.InstrBuzz) as String, Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
 
         dc.setColor(Palette.CHIP_GREY, Graphics.COLOR_TRANSPARENT);
-        Hud.drawWrappedCenteredText(dc, metrics, metrics.px(302), 0, WatchUi.loadResource(Rez.Strings.InstrFooter) as String, metrics.width - metrics.px(112));
+        Hud.drawFitWrappedCenteredText(dc, metrics, metrics.px(302), 0, WatchUi.loadResource(Rez.Strings.InstrFooter) as String, metrics.width - metrics.px(112), bodyBottom(metrics));
     }
 
-    // Replaces the old page-dot progress indicator: a plain "SELECT >" hint
-    // naming what the button actually does on this page - advance to the
-    // next card, or return home from the last one - same idiom as the
-    // SELECT hints on Setup/Break/Paused.
-    function drawContinueHint(dc as Graphics.Dc, metrics as ScreenMetrics, page as Number) as Void {
-        var isLastPage = (page >= GameConstants.INSTRUCTIONS_PAGE_COUNT - 1);
-        var hintId = isLastPage ? Rez.Strings.InstrHintDone : Rez.Strings.InstrHintNext;
-        var font = metrics.fontFor(0);
-        dc.setColor(Palette.MUTED_GREY, Graphics.COLOR_TRANSPARENT);
-        var y = metrics.isRound ? (metrics.height - metrics.px(56) - dc.getFontHeight(font)) : (metrics.height - metrics.px(30) - dc.getFontHeight(font));
-        Hud.drawCenteredText(dc, metrics, y, 0, WatchUi.loadResource(hintId) as String);
+    // Green triangle at the 2 o'clock edge, pointing at the SELECT button -
+    // the same "press this" marker the break screen puts there, so the one
+    // gesture the cards need is taught by position rather than by a line of
+    // copy competing with the card's own text. Static, unlike the break
+    // screen's, since these pages don't animate; and identical on every page
+    // because SELECT always moves forward, whether that's the next card or
+    // back home from the last one.
+    function drawSelectIndicator(dc as Graphics.Dc, metrics as ScreenMetrics) as Void {
+        var triW = metrics.px(13);
+        var triH = metrics.px(13);
+        var tipX = metrics.width - metrics.px(22);
+        var cy = metrics.px(133);
+
+        dc.setColor(Palette.GREEN, Graphics.COLOR_TRANSPARENT);
+        dc.fillPolygon([
+            [tipX - triW, cy - triH],
+            [tipX, cy],
+            [tipX - triW, cy + triH]
+        ]);
     }
 }

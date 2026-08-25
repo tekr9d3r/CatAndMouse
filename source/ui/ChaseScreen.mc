@@ -55,38 +55,7 @@ module ChaseScreen {
 
     function drawTimeRing(dc as Graphics.Dc, metrics as ScreenMetrics, chase as ChaseModel, isChased as Boolean, stage as Number) as Void {
         var remaining = 1.0 - (chase.roundElapsed / GameConstants.ROUND_MAX_SECONDS);
-        if (remaining < 0.0) {
-            remaining = 0.0;
-        } else if (remaining > 1.0) {
-            remaining = 1.0;
-        }
-
-        var ringWidth = metrics.px(18);
-        if (ringWidth < 3) {
-            ringWidth = 3;
-        }
-        var radius = (metrics.minDim - ringWidth) / 2;
-
-        dc.setPenWidth(ringWidth);
-
-        // Empty track first, then the remaining-time arc over it.
-        dc.setColor(trackColorFor(isChased, stage), Graphics.COLOR_TRANSPARENT);
-        dc.drawCircle(metrics.centerX, metrics.centerY, radius);
-
-        if (remaining > 0.003) {
-            dc.setColor(fillColorFor(stage), Graphics.COLOR_TRANSPARENT);
-            if (remaining >= 0.997) {
-                dc.drawCircle(metrics.centerX, metrics.centerY, radius);
-            } else {
-                // CSS conic-gradient runs clockwise from 12 o'clock; Dc
-                // degrees run counter-clockwise from 3 o'clock.
-                var sweep = remaining * 360.0;
-                var endDeg = ((90.0 - sweep).toNumber() + 360) % 360;
-                dc.drawArc(metrics.centerX, metrics.centerY, radius, Graphics.ARC_CLOCKWISE, 90, endDeg);
-            }
-        }
-
-        dc.setPenWidth(1);
+        Hud.drawTimeRing(dc, metrics, remaining, 18, fillColorFor(stage), trackColorFor(isChased, stage));
     }
 
     function fillColorFor(stage as Number) as Graphics.ColorType {

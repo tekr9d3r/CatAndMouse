@@ -17,8 +17,6 @@
     <string id="InstrRed">Red · nearly caught</string>
     <string id="InstrBuzz">Buzz · gap changed</string>
     <string id="InstrFooter">Play by feel. Look down when it buzzes.</string>
-    <string id="InstrHintNext">SELECT > next</string>
-    <string id="InstrHintDone">SELECT > done</string>
 
     <string id="MenuIntensityTitle">INTENSITY</string>
     <string id="IntensityEasy">Easy</string>
@@ -35,29 +33,28 @@
     <string id="MenuSkipWarmup">Skip Warmup</string>
     <string id="DeleteConfirmMessage">Delete this activity? This cannot be undone.</string>
 
-    <string id="StateWarmup">WARM UP</string>
     <string id="StateChased">MOUSE!</string>
     <string id="StateChasing">CAT!</string>
     <string id="ChaseRun">RUN!</string>
     <string id="ChasePounce">POUNCE!</string>
     <string id="StatePaused">PAUSED</string>
-    <string id="StateSummary">GAME OVER</string>
 
-    <string id="WarmupWakesIn">THE CAT WAKES IN</string>
+    <string id="WarmupCatSleeps">CAT SLEEPS</string>
+    <string id="WarmupCatWakes">CAT WAKES</string>
+    <string id="PacePerKm">/km</string>
 
     <string id="BreakRoundLabel">ROUND</string>
     <string id="BreakNextLabel">NEXT</string>
     <string id="BreakWonSuffix">won</string>
     <string id="BreakTimeLabel">TIME</string>
     <string id="BreakKmLabel">KM</string>
-    <string id="BreakNextCat">Next: you're the cat</string>
-    <string id="BreakNextMouse">Next: you're the mouse</string>
+    <string id="BreakNextRoleCat">CAT</string>
+    <string id="BreakNextRoleMouse">MOUSE</string>
 
     <string id="HintPausedResume">SELECT > resume</string>
 
-    <string id="ScoreLabel">SCORE</string>
     <string id="RoundsLabel">ROUNDS</string>
-    <string id="SummaryFooter">saved to Garmin Connect</string>
+    <string id="SummaryAvgLabel">AVG /KM</string>
 
     <string id="OutcomeCaughtByCat">The cat got you!</string>
     <string id="OutcomeEscapedAsMouse">You escaped!</string>

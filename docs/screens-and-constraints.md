@@ -27,8 +27,9 @@ Picks difficulty.
 
 ### 3. Warmup
 **State:** `STATE_WARMUP`
-A short countdown before the chase begins (5–10% of total session length, capped at 5 min), so the user can jog into pace before being chased.
-- Shows: countdown timer, current live pace.
+A fixed 5:00 countdown before the chase begins, so the user can jog into pace before being chased.
+- Shows: a sleeping cat, the countdown, and live pace — no caption anywhere. The rim is a ring that drains through the five minutes, the same "rim is time left" idiom the chase screen uses.
+- In the final 10 seconds the wake cue is entirely graphic: the cat's closed-eye lines open into wide circles, the countdown turns blue, the label reads CAT WAKES, and a single warning buzz fires.
 - No user input expected here other than pause (see Pause below); it auto-advances to the first chase round when the timer hits zero.
 
 ### 4. Chase — "You are the Mouse"
@@ -62,7 +63,7 @@ A generic pause overlay, reachable via SELECT from any state except Setup/Summar
 ### 8. Summary
 **State:** `STATE_SUMMARY`
 Shown once the total configured session length has elapsed (checked continuously, including through Break/Paused).
-- Shows: a static character (matching whichever role the player was in during the very last round), the final round's outcome message, total rounds played, and final score.
+- Shows: session distance as the hero number, average pace and rounds played beneath it, and a green checkmark standing in for "saved". Up top the cat and mouse stand side by side, both smiling and front-facing with the cat's tail curled around the mouse — the chase is called off — swaying together on one slow shared loop.
 - End of the flow — no further input advances anywhere (app would need to be relaunched to play again).
 
 ## Flow summary
@@ -98,7 +99,7 @@ Takeaways for wireframing:
 - No bitmap art is currently used for gameplay elements (the cat/mouse characters are drawn from primitives, not image files) specifically so the same code scales to every resolution/shape above without needing per-device art variants. A wireframe tool doesn't need to account for image assets unless that changes.
 - Bitmap image resources (if used) are typically PNG; the project's one image asset (the launcher icon) is an SVG rasterized at build time — that's specific to launcher icons, not general in-app graphics.
 - Text uses a fixed system font-size enum (roughly xtiny/tiny/small/medium/large), not arbitrary point sizes — designs should think in relative size tiers, not exact type scales.
-- Animation is possible (this isn't a watchface, so there's no forced low-refresh "always-on" mode) but is intentionally throttled to a low frame rate (~5 fps in the current implementation) and stopped outright during idle states (paused/summary), because the app runs continuously over GPS for the length of the whole workout (10–30+ minutes) and battery matters.
+- Animation is possible (this isn't a watchface, so there's no forced low-refresh "always-on" mode) but is intentionally throttled to a low frame rate (~5 fps in the current implementation) and stopped outright while paused (and on the static instructions cards), because the app runs continuously over GPS for the length of the whole workout (10–30+ minutes) and battery matters. The summary screen is the exception that proves the rule: it animates, but it is only ever reached after the recording has been stopped and saved, so there is no GPS session left to protect.
 
 ### Sound & haptics
 - **No device in this lineup has a real speaker.** Audio is limited to a fixed system set of short alert *tones* (like an alarm-clock beep) — the same fixed sound set on every Connect IQ app and device, not something a designer can author custom audio for.

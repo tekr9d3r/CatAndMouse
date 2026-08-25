@@ -26,6 +26,10 @@ class GameController {
     private var _pendingNextState as Number;
     private var _lastRoundOutcome as Number;
     private var _warmupWarned as Boolean;
+    // Distance frozen at the moment the activity ends. Activity.getActivityInfo()
+    // stops reporting elapsedDistance once the session is saved, and turn 11's
+    // summary leads with distance, so the final value has to be kept here.
+    private var _finalDistanceMeters as Float?;
 
     private var _setupIntensityIndex as Number;
     private var _homeIndex as Number;
@@ -48,6 +52,7 @@ class GameController {
         _pendingNextState = GameConstants.STATE_CHASED;
         _lastRoundOutcome = GameConstants.OUTCOME_ESCAPED_AS_MOUSE;
         _warmupWarned = false;
+        _finalDistanceMeters = null;
         _setupIntensityIndex = 1; // default to Medium
     }
 
@@ -142,6 +147,7 @@ class GameController {
         _score = 0;
         _lastRoundPoints = 0;
         _warmupWarned = false;
+        _finalDistanceMeters = null;
 
         _recorder.start();
         state = GameConstants.STATE_WARMUP;
@@ -278,6 +284,7 @@ class GameController {
             _timer.stop();
             _timer = null;
         }
+        _finalDistanceMeters = totalDistanceMeters();
         _recorder.stop();
         state = GameConstants.STATE_SUMMARY;
         _feedback.onGameSummary();
@@ -308,11 +315,17 @@ class GameController {
         _score = 0;
         _lastRoundPoints = 0;
         _warmupWarned = false;
+        _finalDistanceMeters = null;
     }
 
     // Total session distance so far, from the live activity - shown on the
-    // break screen's stats row (turn 10).
+    // break screen's stats row (turn 10) and as the summary's hero number
+    // (turn 11), where the frozen end-of-activity value stands in because the
+    // live one is gone by then.
     function totalDistanceMeters() as Float {
+        if (_finalDistanceMeters != null) {
+            return _finalDistanceMeters as Float;
+        }
         var info = Activity.getActivityInfo();
         if (info != null && info.elapsedDistance != null) {
             return info.elapsedDistance;

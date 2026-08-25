@@ -24,10 +24,16 @@ class Character {
     // because Instinct 2's runtime caps methods at 9 arguments.
     var paceText as String?;
 
+    // Turn 11 summary pose: the chase is called off, so the character faces
+    // the viewer - two symmetric eyes instead of the profile face, no tail,
+    // no nose. Callers pair it with smiling=true per the mockup.
+    var truce as Boolean;
+
     function initialize(role as Number) {
         self.role = role;
         smiling = false;
         paceText = null;
+        truce = false;
     }
 
     // x,y: body center. size: body radius in pixels (baseline-scaled by the
@@ -48,8 +54,11 @@ class Character {
         }
 
         // Mockup motion: the cat creeps (x sway), the mouse scurries (a
-        // two-step vertical hop).
-        if (role == GameConstants.ROLE_CAT) {
+        // two-step vertical hop). Truce pairs sway together on one slow
+        // gentle bob instead (turn 11) - callers share the same phase.
+        if (truce) {
+            y += (Math.sin(phase) * s * 0.08).toNumber();
+        } else if (role == GameConstants.ROLE_CAT) {
             x += (Math.sin(phase * 1.5) * s * 0.12).toNumber();
         } else {
             var hop = ((phase * 4.0).toNumber() % 2 == 0) ? 0 : (s * 0.1).toNumber();
@@ -72,13 +81,17 @@ class Character {
             earColor = resting ? Palette.OFF_WHITE : 0xffe9c9;
         }
 
-        drawTail(dc, x, y, s, facing, earColor);
+        if (!truce) {
+            drawTail(dc, x, y, s, facing, earColor);
+        }
         drawEars(dc, x, y, s, earColor);
 
         dc.setColor(bodyColor, Graphics.COLOR_TRANSPARENT);
         dc.fillCircle(x, y, s);
 
-        if (role == GameConstants.ROLE_CAT) {
+        if (truce) {
+            drawTruceEyes(dc, x, y, s, accentColor);
+        } else if (role == GameConstants.ROLE_CAT) {
             drawCatEye(dc, x, y, s, facing, accentColor, paceText != null);
         } else {
             drawNose(dc, x, y, s, facing);
@@ -91,7 +104,7 @@ class Character {
             drawPace(dc, x, y, s, accentColor, paceText as String);
         }
         if (smiling) {
-            drawSmile(dc, x, y, s, facing, accentColor);
+            drawSmile(dc, x, y, s, truce ? 0 : facing, accentColor);
         }
     }
 
@@ -161,6 +174,19 @@ class Character {
         var ey = y - (s * (hasPace ? 0.5 : 0.2)).toNumber();
         dc.setColor(color, Graphics.COLOR_TRANSPARENT);
         dc.fillCircle(ex, ey, eyeR);
+    }
+
+    // Two symmetric front-facing eyes for the turn 11 truce pose.
+    private function drawTruceEyes(dc as Graphics.Dc, x as Number, y as Number, s as Number, color as Graphics.ColorType) as Void {
+        var eyeR = (s * 0.14).toNumber();
+        if (eyeR < 1) {
+            eyeR = 1;
+        }
+        var spread = (s * 0.39).toNumber();
+        var eyeY = y - (s * 0.1).toNumber();
+        dc.setColor(color, Graphics.COLOR_TRANSPARENT);
+        dc.fillCircle(x - spread, eyeY, eyeR);
+        dc.fillCircle(x + spread, eyeY, eyeR);
     }
 
     private function drawMouseEye(dc as Graphics.Dc, x as Number, y as Number, s as Number, facing as Number, color as Graphics.ColorType) as Void {

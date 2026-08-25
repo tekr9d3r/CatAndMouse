@@ -5,12 +5,14 @@ import Toybox.Lang;
 // Turn 10's break redesign, "outcome first" variant (10a): the emotional
 // beat leads (ESCAPED! / CAUGHT!), then the rounds-won tally as the hero
 // number, then session time and distance as context. A green arrow blinks
-// at the 2 o'clock edge - where SELECT physically sits - and the bottom row
-// names the next role beside a mini character. Blue break rim; waits for
+// at the 2 o'clock edge - where SELECT physically sits - labeled "NEXT"
+// with the upcoming role's name right below it. Blue break rim; waits for
 // SELECT indefinitely.
+//
+// The original bottom row ("Next: you're the mouse" + a mini character)
+// overflowed the round bezel on-device - removed in favor of a single short
+// role word stacked under the NEXT arrow instead.
 module BreakScreen {
-
-    var _nextRoleCharacter as Character?;
 
     function draw(dc as Graphics.Dc, metrics as ScreenMetrics, layout as HudLayout, controller as GameController, phase as Float) as Void {
         Hud.drawRim(dc, metrics, Palette.RECOVERY_RIM, 14);
@@ -27,17 +29,18 @@ module BreakScreen {
         dc.setColor(Palette.MUTED_GREY, Graphics.COLOR_TRANSPARENT);
         Hud.drawCenteredText(dc, metrics, metrics.px(118), 0, (WatchUi.loadResource(Rez.Strings.BreakRoundLabel) as String) + " " + controller.roundIndex());
 
-        drawSelectArrow(dc, metrics, phase);
+        drawSelectArrow(dc, metrics, phase, controller.pendingNextRole());
         drawTally(dc, metrics, controller.score(), controller.roundIndex());
         drawStatsRow(dc, metrics, controller);
-        drawNextRoleRow(dc, metrics, controller.pendingNextRole());
 
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
     }
 
     // Green NEXT + triangle at the 2 o'clock edge, pointing at the SELECT
-    // button, blinking slowly (10a: top 120, right 22, ~1s cadence).
-    function drawSelectArrow(dc as Graphics.Dc, metrics as ScreenMetrics, phase as Float) as Void {
+    // button, blinking slowly (10a: top 120, right 22, ~1s cadence), with
+    // the upcoming role's name stacked right below it, same right-justified
+    // alignment.
+    function drawSelectArrow(dc as Graphics.Dc, metrics as ScreenMetrics, phase as Float, nextRole as Number) as Void {
         var on = (((phase / 0.85).toNumber()) % 2) == 0;
         var triW = metrics.px(13);
         var triH = metrics.px(13);
@@ -52,8 +55,14 @@ module BreakScreen {
                 [tipX - triW, cy + triH]
             ]);
         }
+        var font = metrics.fontFor(0);
         var label = WatchUi.loadResource(Rez.Strings.BreakNextLabel) as String;
-        dc.drawText(tipX - triW - metrics.px(8), cy, metrics.fontFor(0), label, Graphics.TEXT_JUSTIFY_RIGHT | Graphics.TEXT_JUSTIFY_VCENTER);
+        var labelX = tipX - triW - metrics.px(8);
+        dc.drawText(labelX, cy, font, label, Graphics.TEXT_JUSTIFY_RIGHT | Graphics.TEXT_JUSTIFY_VCENTER);
+
+        var roleId = (nextRole == GameConstants.ROLE_CAT) ? Rez.Strings.BreakNextRoleCat : Rez.Strings.BreakNextRoleMouse;
+        var roleY = cy + dc.getFontHeight(font);
+        dc.drawText(labelX, roleY, font, WatchUi.loadResource(roleId) as String, Graphics.TEXT_JUSTIFY_RIGHT | Graphics.TEXT_JUSTIFY_VCENTER);
     }
 
     // Rounds-won tally: big mono number with a smaller grey "/n won"
@@ -114,28 +123,5 @@ module BreakScreen {
 
     function maxOf(a as Number, b as Number) as Number {
         return (a > b) ? a : b;
-    }
-
-    // Bottom row: static mini character in the upcoming role beside
-    // "Next: you're the cat/mouse" in break blue (10a: bottom 56).
-    function drawNextRoleRow(dc as Graphics.Dc, metrics as ScreenMetrics, nextRole as Number) as Void {
-        if (_nextRoleCharacter == null || (_nextRoleCharacter as Character).role != nextRole) {
-            _nextRoleCharacter = new Character(nextRole);
-        }
-        var isCat = (nextRole == GameConstants.ROLE_CAT);
-        var text = WatchUi.loadResource(isCat ? Rez.Strings.BreakNextCat : Rez.Strings.BreakNextMouse) as String;
-        var font = metrics.fontFor(1);
-        var textW = dc.getTextWidthInPixels(text, font);
-        var charR = metrics.px(17);
-        var rowGap = metrics.px(12);
-
-        var totalW = charR * 2 + rowGap + textW;
-        var charX = metrics.centerX - totalW / 2 + charR;
-        var cy = metrics.height - metrics.px(56) - metrics.px(17);
-
-        (_nextRoleCharacter as Character).draw(dc, charX, cy, charR, 1, 0.0, 0.0, GameConstants.DANGER_STAGE_REST, Palette.BLACK);
-
-        dc.setColor(Palette.RECOVERY_TITLE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(charX + charR + rowGap, cy, font, text, Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
     }
 }

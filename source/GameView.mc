@@ -54,18 +54,20 @@ class GameView extends WatchUi.View {
         } else if (state == GameConstants.STATE_PAUSED) {
             PausedScreen.draw(dc, metrics, layout, controller);
         } else {
-            SummaryScreen.draw(dc, metrics, layout, controller);
+            SummaryScreen.draw(dc, metrics, layout, controller, _animClock.phase());
         }
     }
 
     // Animation only needs to run while something on screen is actually
-    // moving - stopped during paused/summary so the timer doesn't keep
-    // waking the CPU and draining battery over what can be a 30+ minute run.
+    // moving - stopped during pause so the timer doesn't keep waking the CPU
+    // and draining battery over what can be a 30+ minute run. Summary keeps
+    // animating (turn 11's truce sway) since it's only reached after the
+    // recording has already been stopped and saved, so there's no GPS session
+    // left to protect.
     private function syncAnimationClock(state as Number) as Void {
         // Instructions are deliberately static (turn 6: "instructions
         // shouldn't compete with the copy"), so the clock stops there too.
-        if (state == GameConstants.STATE_PAUSED || state == GameConstants.STATE_SUMMARY
-                || state == GameConstants.STATE_INSTRUCTIONS) {
+        if (state == GameConstants.STATE_PAUSED || state == GameConstants.STATE_INSTRUCTIONS) {
             _animClock.stop();
         } else {
             _animClock.start();
