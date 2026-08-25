@@ -5,10 +5,11 @@ import Toybox.Lang;
 // Turn 6's how-to-play cards (6b/6c/6d): three static pages a first-timer
 // actually needs - what the game is (pace is the controller), how a round
 // works (the rim is time), and what the colours/buzzes mean. Blue recovery
-// rim, blue letterspaced card title, three page dots at the bottom with the
-// active page in blue. UP/DOWN pages, SELECT advances and finally returns
-// home. Deliberately no animation - instructions shouldn't compete with the
-// copy.
+// rim, blue letterspaced card title. UP/DOWN pages, SELECT advances and
+// finally returns home - a bottom "SELECT >" hint marks that rather than
+// page dots (which got dropped in favor of this, alongside shrinking the
+// body copy a tier, after both text and dots were overflowing on-device).
+// Deliberately no animation - instructions shouldn't compete with the copy.
 module InstructionsScreen {
 
     var _catCharacter as Character?;
@@ -26,7 +27,7 @@ module InstructionsScreen {
             drawPageSignals(dc, metrics);
         }
 
-        drawPageDots(dc, metrics, page);
+        drawContinueHint(dc, metrics, page);
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
     }
 
@@ -58,7 +59,7 @@ module InstructionsScreen {
         (_mouseCharacter as Character).draw(dc, mouseX, feetY - mouseRadius, mouseRadius, 1, 0.0, 0.0, GameConstants.DANGER_STAGE_REST, Palette.BLACK);
 
         dc.setColor(Palette.CREAM, Graphics.COLOR_TRANSPARENT);
-        Hud.drawWrappedCenteredText(dc, metrics, metrics.px(206), 2, WatchUi.loadResource(Rez.Strings.InstrBodyGame) as String, metrics.width - metrics.px(120));
+        Hud.drawWrappedCenteredText(dc, metrics, metrics.px(206), 1, WatchUi.loadResource(Rez.Strings.InstrBodyGame) as String, metrics.width - metrics.px(120));
     }
 
     // 6c A ROUND: the round screen in miniature - a draining time ring with
@@ -93,7 +94,7 @@ module InstructionsScreen {
         dc.drawText(startX + numW, cy, unitFont, "m", Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
 
         dc.setColor(Palette.CREAM, Graphics.COLOR_TRANSPARENT);
-        Hud.drawWrappedCenteredText(dc, metrics, metrics.px(232), 2, WatchUi.loadResource(Rez.Strings.InstrBodyRound) as String, metrics.width - metrics.px(104));
+        Hud.drawWrappedCenteredText(dc, metrics, metrics.px(232), 1, WatchUi.loadResource(Rez.Strings.InstrBodyRound) as String, metrics.width - metrics.px(104));
     }
 
     // 6d EYES UP: the safety card - what amber, red, and a buzz mean, so
@@ -107,7 +108,7 @@ module InstructionsScreen {
         var x = metrics.px(76) + dotR;
         var textX = x + dotR + metrics.px(16);
         var y = metrics.px(118) + dotR;
-        var font = metrics.fontFor(1);
+        var font = metrics.fontFor(0);
 
         dc.setColor(Palette.AMBER, Graphics.COLOR_TRANSPARENT);
         dc.fillCircle(x, y, dotR);
@@ -130,22 +131,19 @@ module InstructionsScreen {
         dc.drawText(textX, y, font, WatchUi.loadResource(Rez.Strings.InstrBuzz) as String, Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
 
         dc.setColor(Palette.CHIP_GREY, Graphics.COLOR_TRANSPARENT);
-        Hud.drawWrappedCenteredText(dc, metrics, metrics.px(302), 1, WatchUi.loadResource(Rez.Strings.InstrFooter) as String, metrics.width - metrics.px(112));
+        Hud.drawWrappedCenteredText(dc, metrics, metrics.px(302), 0, WatchUi.loadResource(Rez.Strings.InstrFooter) as String, metrics.width - metrics.px(112));
     }
 
-    // Three page dots, the active one in blue (bottom of every card).
-    function drawPageDots(dc as Graphics.Dc, metrics as ScreenMetrics, page as Number) as Void {
-        var dotR = metrics.px(6);
-        if (dotR < 2) {
-            dotR = 2;
-        }
-        var gap = metrics.px(10);
-        var step = dotR * 2 + gap;
-        var y = metrics.height - metrics.px(56) - dotR;
-        var x = metrics.centerX - step;
-        for (var i = 0; i < 3; i += 1) {
-            dc.setColor((i == page) ? Palette.BLUE : Palette.DK_PANEL, Graphics.COLOR_TRANSPARENT);
-            dc.fillCircle(x + i * step, y, dotR);
-        }
+    // Replaces the old page-dot progress indicator: a plain "SELECT >" hint
+    // naming what the button actually does on this page - advance to the
+    // next card, or return home from the last one - same idiom as the
+    // SELECT hints on Setup/Break/Paused.
+    function drawContinueHint(dc as Graphics.Dc, metrics as ScreenMetrics, page as Number) as Void {
+        var isLastPage = (page >= GameConstants.INSTRUCTIONS_PAGE_COUNT - 1);
+        var hintId = isLastPage ? Rez.Strings.InstrHintDone : Rez.Strings.InstrHintNext;
+        var font = metrics.fontFor(0);
+        dc.setColor(Palette.MUTED_GREY, Graphics.COLOR_TRANSPARENT);
+        var y = metrics.isRound ? (metrics.height - metrics.px(56) - dc.getFontHeight(font)) : (metrics.height - metrics.px(30) - dc.getFontHeight(font));
+        Hud.drawCenteredText(dc, metrics, y, 0, WatchUi.loadResource(hintId) as String);
     }
 }

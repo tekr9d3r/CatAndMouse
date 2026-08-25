@@ -5,7 +5,7 @@
     <string id="HomeTitleAmp">&amp;</string>
     <string id="HomeTitleRight">MOUSE</string>
     <string id="HomeStart">START</string>
-    <string id="HomeHowTo">HOW TO PLAY</string>
+    <string id="HomeHowTo">HOW TO</string>
     <string id="HomeExit">EXIT</string>
 
     <string id="InstrTitleGame">THE GAME</string>
@@ -17,6 +17,8 @@
     <string id="InstrRed">Red · nearly caught</string>
     <string id="InstrBuzz">Buzz · gap changed</string>
     <string id="InstrFooter">Play by feel. Look down when it buzzes.</string>
+    <string id="InstrHintNext">SELECT > next</string>
+    <string id="InstrHintDone">SELECT > done</string>
 
     <string id="MenuIntensityTitle">INTENSITY</string>
     <string id="IntensityEasy">Easy</string>

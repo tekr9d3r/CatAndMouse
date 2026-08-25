@@ -13,7 +13,7 @@ class ActivityRecorder {
             return;
         }
         _session = ActivityRecording.createSession({
-            :name => "You Are It",
+            :name => "Cat & Mouse",
             :sport => Activity.SPORT_RUNNING,
             :subSport => Activity.SUB_SPORT_STREET
         });
