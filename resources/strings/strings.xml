@@ -37,7 +37,7 @@
     <string id="StateChasing">CAT!</string>
     <string id="YouTag">YOU</string>
     <string id="ChaseRun">RUN!</string>
-    <string id="ChasePounce">POUNCE!</string>
+    <string id="ChasePounce">GET 'EM!</string>
     <string id="StatePaused">PAUSED</string>
 
     <string id="WarmupCatSleeps">CAT SLEEPS</string>

@@ -56,28 +56,29 @@ module SummaryScreen {
         (_mouseCharacter as Character).draw(dc, mouseX, feetY - mouseRadius, mouseRadius, 1, slowPhase, 0.0, GameConstants.DANGER_STAGE_REST, Palette.BLACK);
     }
 
-    // The cat's tail sweeps out of its lower-right side and hooks toward
-    // the mouse. Built as a short polyline from points computed directly
-    // off the cat's own body circle (angle 0 = 3 o'clock, 90 = 6 o'clock,
-    // screen coords) rather than an independently-placed Dc.drawArc - the
-    // first point is on the body circle by construction, so the tail is
-    // guaranteed to touch the cat regardless of Dc's arc sweep-direction
-    // convention (which is exactly what left it floating disconnected
-    // before: an arc drawn around a separate off-body circle, with no
-    // guarantee the visible quarter-sweep actually reached the body).
+    // The cat's tail attaches near its feet (angle ~65 = just past
+    // straight down, screen coords where 0 = 3 o'clock, 90 = 6 o'clock)
+    // and hooks up toward the mouse. Radius grows monotonically outward
+    // from the body edge at every sampled point, so the whole curve stays
+    // outside the body circle and the first point sits exactly on it -
+    // guaranteed attachment with no reliance on Dc.drawArc's sweep
+    // direction (an earlier version anchored near cheek height, which
+    // read as a stray line off the face rather than a tail off the rear).
     function drawCurledTail(dc as Graphics.Dc, metrics as ScreenMetrics, catX as Number, catY as Number, catRadius as Number, phase as Float) as Void {
         var bob = (Math.sin(phase) * catRadius * 0.08).toNumber();
-        var penW = (catRadius * 0.19).toNumber();
+        var penW = (catRadius * 0.17).toNumber();
         if (penW < 2) {
             penW = 2;
         }
 
-        var angles = [15.0, 45.0, 75.0];
-        var radii = [1.0, 1.35, 1.28];
-        var points = new [angles.size()];
-        for (var i = 0; i < angles.size(); i += 1) {
-            var rad = Math.toRadians(angles[i]);
-            var r = catRadius * radii[i];
+        var steps = 7;
+        var angleStart = 65.0;
+        var angleEnd = -25.0;
+        var points = new [steps + 1];
+        for (var i = 0; i <= steps; i += 1) {
+            var t = i.toFloat() / steps;
+            var rad = Math.toRadians(angleStart + (angleEnd - angleStart) * t);
+            var r = catRadius * (1.0 + 0.5 * t);
             points[i] = [
                 catX + (r * Math.cos(rad)).toNumber(),
                 catY + (r * Math.sin(rad)).toNumber() + bob
@@ -91,6 +92,8 @@ module SummaryScreen {
             var b = points[i + 1] as Array<Number>;
             dc.drawLine(a[0], a[1], b[0], b[1]);
         }
+        var tip = points[steps] as Array<Number>;
+        dc.fillCircle(tip[0], tip[1], (penW * 0.65).toNumber());
         dc.setPenWidth(1);
     }
 

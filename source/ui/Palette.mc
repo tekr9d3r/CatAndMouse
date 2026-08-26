@@ -55,7 +55,7 @@ module Palette {
     const MOUSE_PACE_DANGER = 0xffd9d9;
 
     // Chase screen - cat role (turn 4): closing in is good, so the ramp ends
-    // orange ("POUNCE!") rather than red. Rest/closing stay on a black
+    // orange ("GET 'EM!") rather than red. Rest/closing stay on a black
     // ground - only the final stage floods the screen.
     const CAT_BG_REST = BLACK;
     const CAT_BG_CLOSING = BLACK;

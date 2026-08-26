@@ -9,7 +9,7 @@ import Toybox.Lang;
 //     behind on the left, prey (mouse) ahead on the right, in both roles;
 //   - the screen edge is a round-time progress ring that drains as the
 //     round runs out - the rim belongs to time now, so danger is carried
-//     entirely by the background flood and the blinking RUN!/POUNCE! label;
+//     entirely by the background flood and the blinking RUN!/GET 'EM! label;
 //   - each animal carries its own pace inside its body;
 //   - metres are the biggest thing on screen; no score during a round.
 // Stage thresholds are shared with Feedback (GameConstants.dangerStage) so
