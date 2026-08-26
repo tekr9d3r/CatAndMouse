@@ -35,6 +35,7 @@
 
     <string id="StateChased">MOUSE!</string>
     <string id="StateChasing">CAT!</string>
+    <string id="YouTag">YOU</string>
     <string id="ChaseRun">RUN!</string>
     <string id="ChasePounce">POUNCE!</string>
     <string id="StatePaused">PAUSED</string>

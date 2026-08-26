@@ -36,6 +36,7 @@ A fixed 5:00 countdown before the chase begins, so the user can jog into pace be
 **State:** `STATE_CHASED`
 The main gameplay screen, role 1: a virtual "cat" is chasing the player. Ends when the cat catches the player (gap closes to threshold) or a per-round timeout is reached.
 - Shows: round label + round number, both characters (player = mouse, opponent = cat) positioned with a gap proportional to the live distance between them — they visually converge as the cat closes in.
+- A green "YOU" tag with a downward pointer is pinned above the player's own animal (turn 12a), so which of the two is you never has to be worked out mid-run.
 - A proximity meter (currently a bar, colored green → yellow → red as danger rises) reinforces how close the catch is.
 - Small directional "chevron" indicators appear only while the gap is actively shrinking (not just because it's already close).
 - Text readout: live gap in meters, player's pace, opponent's pace.
@@ -45,7 +46,7 @@ The main gameplay screen, role 1: a virtual "cat" is chasing the player. Ends wh
 ### 5. Chase — "You are the Cat"
 **State:** `STATE_CHASING`
 Same screen/layout as #4, roles reversed: the player is now chasing a virtual "mouse." Ends when the player catches it or the round times out.
-- Visually and structurally identical to screen 4 — same converging characters, same proximity meter, same escalating feedback — just with the label/framing and character roles swapped.
+- Visually and structurally identical to screen 4 — same converging characters, same proximity meter, same escalating feedback — just with the label/framing and character roles swapped. The YOU tag follows the player, so here it sits above the cat.
 
 ### 6. Break
 **State:** `STATE_BREAK`

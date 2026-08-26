@@ -130,6 +130,58 @@ module ChaseScreen {
         mouse.paceText = mousePace;
         cat.draw(dc, catX, catY, catRadius, 1, phase, dangerFrac, catColorStage(isChased, stage), bg);
         mouse.draw(dc, mouseX, mouseY, mouseRadius, 1, phase, dangerFrac, mouseColorStage(isChased, stage), bg);
+
+        // Drawn last so it sits over both animals. STATE_CHASED means the
+        // player is the mouse being hunted; otherwise they're the cat.
+        if (isChased) {
+            drawYouTag(dc, metrics, mouseX, mouseY, mouseRadius);
+        } else {
+            drawYouTag(dc, metrics, catX, catY, catRadius);
+        }
+    }
+
+    // Turn 12a: a green YOU tag with a pointer, pinned above the player's
+    // own animal, so which one you are never has to be worked out at a
+    // glance mid-run. Ratios come off the mockup's 66px mouse: the pointer
+    // tucks into the gap between the ears, apex 1.27 radii above the body
+    // centre, with the pill sitting directly on top of it.
+    function drawYouTag(dc as Graphics.Dc, metrics as ScreenMetrics, x as Number, y as Number, s as Number) as Void {
+        var text = WatchUi.loadResource(Rez.Strings.YouTag) as String;
+        var font = Graphics.FONT_XTINY;
+        var pillW = dc.getTextWidthInPixels(text, font) + maxOf((s * 0.27).toNumber(), 2) * 2;
+        var pillH = dc.getFontHeight(font) + maxOf((s * 0.09).toNumber(), 1) * 2;
+
+        var pointerH = maxOf((s * 0.21).toNumber(), 3);
+        var apexY = y - (s * 1.27).toNumber();
+        var pillBottom = apexY - pointerH;
+        var pillTop = pillBottom - pillH;
+
+        // A danger-stage cat on a 176px screen is big enough to push the tag
+        // off the top, so keep it inside the bezel and let the pointer run
+        // shorter instead of drawing the pill under the rim.
+        var minTop = metrics.px(24);
+        if (pillTop < minTop) {
+            var shift = minTop - pillTop;
+            pillTop += shift;
+            pillBottom += shift;
+        }
+
+        dc.setColor(Palette.GREEN, Graphics.COLOR_TRANSPARENT);
+        dc.fillRoundedRectangle(x - pillW / 2, pillTop, pillW, pillH, pillH / 2);
+        if (apexY > pillBottom) {
+            dc.fillPolygon([
+                [x - pointerH, pillBottom],
+                [x + pointerH, pillBottom],
+                [x, apexY]
+            ]);
+        }
+
+        dc.setColor(Palette.INK, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(x, pillTop + pillH / 2, font, text, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+    }
+
+    function maxOf(a as Number, b as Number) as Number {
+        return (a > b) ? a : b;
     }
 
     function layoutMidY(metrics as ScreenMetrics) as Number {
