@@ -52,11 +52,14 @@ runtime.
 
 ## Supported devices
 
-Currently targets 16 color-screen Garmin devices spanning the Fenix,
-Forerunner, Venu, Instinct (AMOLED), and Vivoactive lines — see
-[`manifest.xml`](manifest.xml) for the exact list. Monochrome (1-bit)
-devices are intentionally not yet supported; that UI pass hasn't been
-designed yet.
+Currently targets 80 color-screen Garmin devices spanning the Fenix,
+Forerunner, Venu, Instinct (AMOLED), Epix, Enduro, Vivoactive, Marq, D2,
+Descent, and Approach lines — see [`manifest.xml`](manifest.xml) for the
+exact list. Every entry's screen (resolution, shape, and color depth) was
+either directly tested in the simulator or matches one that was, since
+the procedural rendering scales off actual screen metrics rather than a
+per-device layout. Monochrome (1-bit) devices are intentionally not yet
+supported; that UI pass hasn't been designed yet.
 
 ## Project structure
 
