@@ -94,10 +94,13 @@ module BreakScreen {
 
     // Session stats: TIME and KM columns (10a: y250, inside insets 70).
     function drawStatsRow(dc as Graphics.Dc, metrics as ScreenMetrics, controller as GameController) as Void {
+        var statute = Utils.isStatute();
         var timeValue = Utils.formatSeconds(controller.elapsedTotal());
-        var kmValue = (controller.totalDistanceMeters() / 1000.0).format("%.2f");
+        var kmValue = (statute
+            ? Utils.metersToMiles(controller.totalDistanceMeters())
+            : controller.totalDistanceMeters() / 1000.0).format("%.2f");
         var timeLabel = WatchUi.loadResource(Rez.Strings.BreakTimeLabel) as String;
-        var kmLabel = WatchUi.loadResource(Rez.Strings.BreakKmLabel) as String;
+        var kmLabel = WatchUi.loadResource(statute ? Rez.Strings.BreakMiLabel : Rez.Strings.BreakKmLabel) as String;
 
         var valueFont = metrics.fontFor(2);
         var labelFont = metrics.fontFor(0);

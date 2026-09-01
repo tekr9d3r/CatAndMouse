@@ -43,12 +43,14 @@
     <string id="WarmupCatSleeps">CAT SLEEPS</string>
     <string id="WarmupCatWakes">CAT WAKES</string>
     <string id="PacePerKm">/km</string>
+    <string id="PacePerMi">/mi</string>
 
     <string id="BreakRoundLabel">ROUND</string>
     <string id="BreakNextLabel">NEXT</string>
     <string id="BreakWonSuffix">won</string>
     <string id="BreakTimeLabel">TIME</string>
     <string id="BreakKmLabel">KM</string>
+    <string id="BreakMiLabel">MI</string>
     <string id="BreakNextRoleCat">CAT</string>
     <string id="BreakNextRoleMouse">MOUSE</string>
 
@@ -56,6 +58,7 @@
 
     <string id="RoundsLabel">ROUNDS</string>
     <string id="SummaryAvgLabel">AVG /KM</string>
+    <string id="SummaryAvgLabelMi">AVG /MI</string>
 
     <string id="OutcomeCaughtByCat">The cat got you!</string>
     <string id="OutcomeEscapedAsMouse">You escaped!</string>

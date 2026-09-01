@@ -226,8 +226,9 @@ module ChaseScreen {
     // mockups, top y198) ---
 
     function drawGapNumber(dc as Graphics.Dc, metrics as ScreenMetrics, gap as Float, stage as Number, tint as Graphics.ColorType) as Void {
-        var numText = gap.format("%.0f");
-        var unitText = "m";
+        var statute = Utils.isStatute();
+        var numText = (statute ? Utils.metersToFeet(gap) : gap).format("%.0f");
+        var unitText = statute ? "ft" : "m";
         var unitFont = metrics.fontFor(2);
         var unitW = dc.getTextWidthInPixels(unitText, unitFont);
         var unitH = dc.getFontHeight(unitFont);

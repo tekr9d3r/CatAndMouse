@@ -63,8 +63,9 @@ module WarmupScreen {
     // the screen. Returns its top edge so the countdown knows where to stop.
     function drawPace(dc as Graphics.Dc, metrics as ScreenMetrics, layout as HudLayout, controller as GameController) as Number {
         var font = metrics.fontFor(1);
+        var paceUnitId = Utils.isStatute() ? Rez.Strings.PacePerMi : Rez.Strings.PacePerKm;
         var text = Utils.speedToPaceString(controller.currentPlayerSpeed())
-            + " " + (WatchUi.loadResource(Rez.Strings.PacePerKm) as String);
+            + " " + (WatchUi.loadResource(paceUnitId) as String);
         var y = metrics.isRound
             ? (metrics.height - metrics.px(66) - dc.getFontHeight(font))
             : layout.hintY;

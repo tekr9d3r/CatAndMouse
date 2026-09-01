@@ -100,8 +100,11 @@ module SummaryScreen {
     // Session distance as the hero number (11a: 108px at y154, "km" unit
     // on its baseline in grey).
     function drawDistanceHero(dc as Graphics.Dc, metrics as ScreenMetrics, controller as GameController) as Void {
-        var numText = (controller.totalDistanceMeters() / 1000.0).format("%.2f");
-        var unitText = "km";
+        var statute = Utils.isStatute();
+        var numText = (statute
+            ? Utils.metersToMiles(controller.totalDistanceMeters())
+            : controller.totalDistanceMeters() / 1000.0).format("%.2f");
+        var unitText = statute ? "mi" : "km";
         var unitFont = metrics.fontFor(2);
         var unitW = dc.getTextWidthInPixels(unitText, unitFont);
         var unitH = dc.getFontHeight(unitFont);
@@ -133,7 +136,8 @@ module SummaryScreen {
         var avgSpeed = (elapsed > 0.0) ? (distance / elapsed) : 0.0;
         var paceValue = Utils.speedToPaceString(avgSpeed);
         var roundsValue = controller.roundIndex().toString();
-        var paceLabel = WatchUi.loadResource(Rez.Strings.SummaryAvgLabel) as String;
+        var paceLabelId = Utils.isStatute() ? Rez.Strings.SummaryAvgLabelMi : Rez.Strings.SummaryAvgLabel;
+        var paceLabel = WatchUi.loadResource(paceLabelId) as String;
         var roundsLabel = WatchUi.loadResource(Rez.Strings.RoundsLabel) as String;
 
         // Value font stepped down a tier from the original design (was
